@@ -1,6 +1,28 @@
 # SOEN345_LetsGetTesty
 SOEN 345 Team Project - Winter 2026
 
+## DB setup
+The PostgreSQL setup script is in `src/backend/database/init.sql`
+
+Create the database once (have postgreSQL installed and running):
+```bash
+createdb lets_get_testy
+```
+
+Run the init script to create tables and insert sample data:
+```bash
+psql -U postgres -d lets_get_testy -f src/backend/database/init.sql
+```
+
+Check if it worked by connecting to the database:
+```bash
+psql -U postgres -d lets_get_testy
+SELECT * FROM users;
+```
+It should show the 2 dummy users inserted.
+
+Exit with `\q`
+
 ## Run the backend
 ```bash
 cd src/backend

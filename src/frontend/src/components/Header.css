@@ -1,0 +1,59 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--page-pad);
+  height: 60px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-sm);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+
+.logo-mark {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.25rem;
+  color: var(--accent);
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nav-link {
+  padding: 0.4rem 0.85rem;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-sub);
+  text-decoration: none;
+  border-radius: var(--radius);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.nav-link:hover  { background: var(--bg-subtle); color: var(--text); }
+.nav-link.active { color: var(--accent); background: var(--accent-bg); }
+
+.nav-cta {
+  padding: 0.45rem 1.1rem;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  background: var(--accent);
+  border-radius: var(--radius);
+  text-decoration: none;
+  transition: opacity 0.15s ease;
+}
+
+.nav-cta:hover { opacity: 0.88; }

@@ -1,3 +1,43 @@
+:root {
+  --bg:          #f5f3ef;
+  --bg-card:     #ffffff;
+  --bg-subtle:   #efecea;
+  --border:      #e0dbd3;
+  --accent:      #1a6fa8;
+  --accent-bg:   rgba(26, 111, 168, 0.09);
+  --accent-text: #155d8e;
+  --ember:       #b84020;
+  --green:       #2d7a52;
+  --text:        #1c1917;
+  --text-sub:    #6b6460;
+  --text-muted:  #a09890;
+
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body:    'Outfit', system-ui, sans-serif;
+
+  --radius:    8px;
+  --page-pad:  2rem;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
 body {
-  margin: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; font-family: var(--font-body); }
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }

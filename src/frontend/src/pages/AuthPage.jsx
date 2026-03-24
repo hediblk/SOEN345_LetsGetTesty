@@ -1,28 +1,100 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import './AuthPage.css'
 
+const AUTH_STORAGE_KEY = 'letsgettesty.auth'
+
+async function submitAuthRequest(path, payload) {
+  let response
+
+  try {
+    response = await fetch(path, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+  } catch {
+    throw new Error('Unable to reach the backend. Make sure it is running on port 8080.')
+  }
+
+  const data = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    throw new Error(data?.message || 'Request failed.')
+  }
+
+  return data
+}
+
 export default function AuthPage() {
+  const navigate = useNavigate()
   const [mode, setMode]         = useState('login')
   const [form, setForm]         = useState({ name: '', contact: '', password: '' })
   const [contactType, setContactType] = useState('email')
   const [submitted, setSubmitted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
+  const [authUser, setAuthUser] = useState(null)
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
-  const handleSubmit = (e) => {
+  const handleModeChange = (nextMode) => {
+    setMode(nextMode)
+    setError('')
+  }
+
+  const handleContinue = () => {
+    setSubmitted(false)
+    navigate(mode === 'login' ? '/reservations' : '/')
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    setSubmitted(true)
+    setSubmitting(true)
+    setError('')
+
+    try {
+      const payload = mode === 'login'
+        ? {
+            contact: form.contact,
+            contactType,
+            password: form.password,
+          }
+        : {
+            name: form.name,
+            contact: form.contact,
+            contactType,
+            password: form.password,
+          }
+
+      const data = await submitAuthRequest(`/api/auth/${mode === 'login' ? 'login' : 'register'}`, payload)
+
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(data))
+      setAuthUser(data)
+      setSubmitted(true)
+    } catch (requestError) {
+      setError(requestError.message)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   if (submitted) {
+    const displayName = authUser?.fullName || 'your account'
+    const successMessage = mode === 'login'
+      ? `Signed in as ${displayName}.`
+      : `Account created for ${displayName}.`
+
     return (
       <div className="auth-page">
         <div className="auth-card">
           <div className="auth-success">
             <span className="success-icon">✓</span>
             <h2>{mode === 'login' ? 'Welcome back.' : 'Account created.'}</h2>
-            <p>You're all set.</p>
-            <button className="auth-btn" onClick={() => setSubmitted(false)}>Continue</button>
+            <p>{successMessage}</p>
+            <button className="auth-btn" onClick={handleContinue}>Continue</button>
           </div>
         </div>
       </div>
@@ -37,12 +109,14 @@ export default function AuthPage() {
           <span className="auth-logo">LGT</span>
           <div className="auth-tabs">
             <button
+              type="button"
               className={`auth-tab ${mode === 'login' ? 'active' : ''}`}
-              onClick={() => setMode('login')}
+              onClick={() => handleModeChange('login')}
             >Sign In</button>
             <button
+              type="button"
               className={`auth-tab ${mode === 'register' ? 'active' : ''}`}
-              onClick={() => setMode('register')}
+              onClick={() => handleModeChange('register')}
             >Register</button>
           </div>
         </div>
@@ -57,7 +131,11 @@ export default function AuthPage() {
                 type="text"
                 placeholder="Jane Doe"
                 value={form.name}
-                onChange={e => set('name', e.target.value)}
+                onChange={e => {
+                  set('name', e.target.value)
+                  setError('')
+                }}
+                disabled={submitting}
                 required
               />
             </div>
@@ -70,12 +148,20 @@ export default function AuthPage() {
                 <button
                   type="button"
                   className={`toggle-pill ${contactType === 'email' ? 'active' : ''}`}
-                  onClick={() => setContactType('email')}
+                  onClick={() => {
+                    setContactType('email')
+                    setError('')
+                  }}
+                  disabled={submitting}
                 >Email</button>
                 <button
                   type="button"
                   className={`toggle-pill ${contactType === 'phone' ? 'active' : ''}`}
-                  onClick={() => setContactType('phone')}
+                  onClick={() => {
+                    setContactType('phone')
+                    setError('')
+                  }}
+                  disabled={submitting}
                 >Phone</button>
               </div>
             </div>
@@ -84,7 +170,11 @@ export default function AuthPage() {
               type={contactType === 'email' ? 'email' : 'tel'}
               placeholder={contactType === 'email' ? 'you@example.com' : '514-555-0100'}
               value={form.contact}
-              onChange={e => set('contact', e.target.value)}
+              onChange={e => {
+                set('contact', e.target.value)
+                setError('')
+              }}
+              disabled={submitting}
               required
             />
           </div>
@@ -96,13 +186,21 @@ export default function AuthPage() {
               type="password"
               placeholder="••••••••"
               value={form.password}
-              onChange={e => set('password', e.target.value)}
+              onChange={e => {
+                set('password', e.target.value)
+                setError('')
+              }}
+              disabled={submitting}
               required
             />
           </div>
 
-          <button type="submit" className="auth-btn">
-            {mode === 'login' ? 'Sign In' : 'Create Account'}
+          {error && <p className="auth-error">{error}</p>}
+
+          <button type="submit" className="auth-btn" disabled={submitting}>
+            {submitting
+              ? (mode === 'login' ? 'Signing In…' : 'Creating Account…')
+              : (mode === 'login' ? 'Sign In' : 'Create Account')}
           </button>
 
         </form>

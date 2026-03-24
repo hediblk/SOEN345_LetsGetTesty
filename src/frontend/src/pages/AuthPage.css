@@ -54,6 +54,7 @@
 
 .auth-tab.active { background: var(--bg-card); color: var(--text); box-shadow: var(--shadow-sm); }
 .auth-tab:hover:not(.active) { color: var(--text); }
+.auth-tab:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .auth-form { display: flex; flex-direction: column; gap: 1.25rem; }
 
@@ -91,6 +92,7 @@
 }
 
 .toggle-pill.active { background: var(--bg-card); color: var(--accent); box-shadow: var(--shadow-sm); }
+.toggle-pill:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .form-input {
   padding: 0.65rem 0.9rem;
@@ -110,6 +112,17 @@
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-bg);
 }
+.form-input:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.auth-error {
+  margin: -0.15rem 0 0;
+  color: #b54747;
+  font-size: 13px;
+  line-height: 1.4;
+}
 
 .auth-btn {
   margin-top: 0.25rem;
@@ -125,6 +138,7 @@
 }
 
 .auth-btn:hover { opacity: 0.88; }
+.auth-btn:disabled { opacity: 0.7; cursor: not-allowed; }
 
 .auth-success {
   display: flex;

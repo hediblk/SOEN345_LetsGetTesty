@@ -8,17 +8,60 @@ CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     full_name VARCHAR(255) NOT NULL, -- not hashed for now so i can have some dummy values inserted
     password_hash VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL,
-    phone VARCHAR(50)
+    email VARCHAR(255),
+    phone VARCHAR(50),
+    CONSTRAINT users_exactly_one_contact_chk
+        CHECK (num_nonnulls(email, phone) = 1)
 );
 
 CREATE TABLE IF NOT EXISTS admins (
     id SERIAL PRIMARY KEY,
     full_name VARCHAR(255) NOT NULL,
     password_hash VARCHAR(255) NOT NULL, -- not hashed for now so i can have some dummy values inserted
-    email VARCHAR(255) NOT NULL,
-    phone VARCHAR(50)
+    email VARCHAR(255),
+    phone VARCHAR(50),
+    CONSTRAINT admins_exactly_one_contact_chk
+        CHECK (num_nonnulls(email, phone) = 1)
 );
+
+ALTER TABLE users ALTER COLUMN password_hash SET NOT NULL;
+ALTER TABLE admins ALTER COLUMN password_hash SET NOT NULL;
+ALTER TABLE users ALTER COLUMN email DROP NOT NULL;
+ALTER TABLE admins ALTER COLUMN email DROP NOT NULL;
+
+UPDATE users
+SET phone = NULL
+WHERE email IS NOT NULL AND phone IS NOT NULL;
+
+UPDATE admins
+SET phone = NULL
+WHERE email IS NOT NULL AND phone IS NOT NULL;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'users_exactly_one_contact_chk'
+    ) THEN
+        ALTER TABLE users
+        ADD CONSTRAINT users_exactly_one_contact_chk
+        CHECK (num_nonnulls(email, phone) = 1);
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'admins_exactly_one_contact_chk'
+    ) THEN
+        ALTER TABLE admins
+        ADD CONSTRAINT admins_exactly_one_contact_chk
+        CHECK (num_nonnulls(email, phone) = 1);
+    END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS events (
     id SERIAL PRIMARY KEY,
@@ -56,12 +99,12 @@ CREATE TABLE IF NOT EXISTS notifications (
 --------------------------------------------------------
 
 INSERT INTO users (id, full_name, password_hash, email, phone) VALUES
-    (1, 'user1', 'user123', 'user1@example.com', '514-555-5555'),
-    (2, 'user2', 'user456', 'user2@example.com', '514-666-6666')
+    (1, 'user1', 'user123', 'user1@example.com', NULL),
+    (2, 'user2', 'user456', NULL, '514-666-6666')
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO admins (id, full_name, password_hash, email, phone) VALUES
-    (1, 'Admin One', 'admin123', 'admin1@example.com', '514-777-7777')
+    (1, 'Admin One', 'admin123', 'admin1@example.com', NULL)
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO events (

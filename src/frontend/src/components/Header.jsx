@@ -11,6 +11,7 @@ export default function Header() {
       </Link>
       <nav className="nav">
         <Link to="/" className={pathname === '/' ? 'nav-link active' : 'nav-link'}>Events</Link>
+        <Link to="/add-events" className={pathname === '/add-events' ? 'nav-link active' : 'nav-link'}>Add Event</Link>
         <Link to="/reservations" className={pathname === '/reservations' ? 'nav-link active' : 'nav-link'}>My Tickets</Link>
         <Link to="/auth" className="nav-cta">Sign In</Link>
       </nav>

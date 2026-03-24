@@ -57,3 +57,19 @@
 }
 
 .nav-cta:hover { opacity: 0.88; }
+
+@media (max-width: 640px) {
+  .header {
+    height: auto;
+    padding-top: 0.85rem;
+    padding-bottom: 0.85rem;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .nav {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}

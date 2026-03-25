@@ -11,5 +11,6 @@ public record EventRequest(
         String location,
         LocalDateTime startsAt,
         LocalDateTime endsAt,
-        Integer capacity) {
+        Integer capacity,
+        Integer price) {
 }

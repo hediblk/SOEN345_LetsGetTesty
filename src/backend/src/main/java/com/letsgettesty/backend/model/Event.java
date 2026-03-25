@@ -14,6 +14,7 @@ public class Event {
     private LocalDateTime startsAt;
     private LocalDateTime endsAt;
     private int capacity;
+    private int price;
     private int reservedCount;
     private boolean isCancelled;
 
@@ -29,6 +30,7 @@ public class Event {
             LocalDateTime startsAt,
             LocalDateTime endsAt,
             int capacity,
+            int price,
             int reservedCount,
             boolean isCancelled) {
         this.id = id;
@@ -39,6 +41,7 @@ public class Event {
         this.startsAt = startsAt;
         this.endsAt = endsAt;
         this.capacity = capacity;
+        this.price = price;
         this.reservedCount = reservedCount;
         this.isCancelled = isCancelled;
     }
@@ -105,6 +108,14 @@ public class Event {
 
     public void setCapacity(int capacity) {
         this.capacity = capacity;
+    }
+
+    public int getPrice() {
+        return price;
+    }
+
+    public void setPrice(int price) {
+        this.price = price;
     }
 
     public int getReservedCount() {

@@ -1,7 +1,7 @@
 import { useState } from 'react'
+import { createEvent } from '../api/eventsApi'
+import { buildCreateEventPayload, CATEGORY_OPTIONS, formatEventDate } from '../data/events'
 import './AddEventsPage.css'
-
-const CATEGORIES = ['Movies', 'Concerts', 'Travel', 'Sports']
 
 const INITIAL_FORM = {
   title: '',
@@ -12,39 +12,33 @@ const INITIAL_FORM = {
   capacity: '50',
 }
 
-function formatDate(isoDate) {
-  return new Date(isoDate).toLocaleDateString('en-CA', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  })
-}
-
-export default function AddEventsPage({ events, setEvents }) {
+export default function AddEventsPage({ events, onEventsChanged }) {
   const [form, setForm] = useState(INITIAL_FORM)
   const [notice, setNotice] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   function handleChange(event) {
     const { name, value } = event.target
     setForm(current => ({ ...current, [name]: value }))
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
-
-    const nextEvent = {
-      id: Date.now(),
-      title: form.title.trim(),
-      date: form.date,
-      category: form.category,
-      location: form.location.trim(),
-      price: Number(form.price),
-      capacity: Number(form.capacity),
+    const title = form.title.trim()
+    setSubmitting(true)
+    setNotice('')
+    try {
+      const payload = buildCreateEventPayload(form)
+      const created = await createEvent(payload)
+      setForm(INITIAL_FORM)
+      await onEventsChanged()
+      const serverTitle = created?.title?.trim() || title
+      setNotice(`Added ${serverTitle} to the event list.`)
+    } catch (err) {
+      setNotice(err.message || 'Could not add event.')
+    } finally {
+      setSubmitting(false)
     }
-
-    setEvents(current => [nextEvent, ...current])
-    setForm(INITIAL_FORM)
-    setNotice(`Added ${nextEvent.title} to the demo event list.`)
   }
 
   return (
@@ -112,7 +106,7 @@ export default function AddEventsPage({ events, setEvents }) {
                 value={form.category}
                 onChange={handleChange}
               >
-                {CATEGORIES.map(category => (
+                {CATEGORY_OPTIONS.map(category => (
                   <option key={category} value={category}>
                     {category}
                   </option>
@@ -152,7 +146,9 @@ export default function AddEventsPage({ events, setEvents }) {
           </div>
 
           <div className="form-actions">
-            <button className="primary-action" type="submit">Add Event</button>
+            <button className="primary-action" type="submit" disabled={submitting}>
+              {submitting ? 'Adding…' : 'Add Event'}
+            </button>
             {notice ? <p className="form-notice">{notice}</p> : null}
           </div>
         </form>
@@ -167,7 +163,7 @@ export default function AddEventsPage({ events, setEvents }) {
               <article className="preview-card" key={eventItem.id}>
                 <div className="preview-top">
                   <span className="preview-category">{eventItem.category}</span>
-                  <span className="preview-date">{formatDate(eventItem.date)}</span>
+                  <span className="preview-date">{formatEventDate(eventItem.date)}</span>
                 </div>
                 <h3>{eventItem.title}</h3>
                 <p className="preview-location">{eventItem.location}</p>

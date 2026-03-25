@@ -24,6 +24,7 @@ public class JdbcEventRepository implements EventRepository {
             starts_at,
             ends_at,
             capacity,
+            price,
             reserved_count,
             is_cancelled
             """;
@@ -55,10 +56,11 @@ public class JdbcEventRepository implements EventRepository {
                 starts_at,
                 ends_at,
                 capacity,
+                price,
                 reserved_count,
                 is_cancelled
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             RETURNING
             """
             + EVENT_TABLE_COLUMNS;
@@ -71,7 +73,8 @@ public class JdbcEventRepository implements EventRepository {
                 location = ?,
                 starts_at = ?,
                 ends_at = ?,
-                capacity = ?
+                capacity = ?,
+                price = ?
             WHERE id = ?
             """;
 
@@ -92,6 +95,7 @@ public class JdbcEventRepository implements EventRepository {
             resultSet.getObject("starts_at", java.time.LocalDateTime.class),
             resultSet.getObject("ends_at", java.time.LocalDateTime.class),
             resultSet.getInt("capacity"),
+            resultSet.getInt("price"),
             resultSet.getInt("reserved_count"),
             resultSet.getBoolean("is_cancelled"));
 
@@ -125,6 +129,7 @@ public class JdbcEventRepository implements EventRepository {
                 event.getStartsAt(),
                 event.getEndsAt(),
                 event.getCapacity(),
+                event.getPrice(),
                 event.getReservedCount(),
                 event.isCancelled());
     }
@@ -140,6 +145,7 @@ public class JdbcEventRepository implements EventRepository {
                 event.getStartsAt(),
                 event.getEndsAt(),
                 event.getCapacity(),
+                event.getPrice(),
                 event.getId());
         return updated > 0;
     }

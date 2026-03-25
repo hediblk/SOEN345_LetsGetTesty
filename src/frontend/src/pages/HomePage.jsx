@@ -1,13 +1,10 @@
 import { useState } from 'react'
+import { formatEventDate } from '../data/events'
 import './HomePage.css'
 
 const CATS = ['All', 'Movies', 'Concerts', 'Travel', 'Sports']
 
-function formatDate(iso) {
-  return new Date(iso).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })
-}
-
-export default function HomePage({ events }) {
+export default function HomePage({ events, eventsLoading, eventsError }) {
   const [search, setSearch]   = useState('')
   const [cat, setCat]         = useState('All')
   const [dateFrom, setDateFrom] = useState('')
@@ -28,6 +25,10 @@ export default function HomePage({ events }) {
           unforgettable event.
         </h1>
       </section>
+
+      {eventsError ? (
+        <p className="no-results" role="alert">{eventsError}</p>
+      ) : null}
 
       <section className="filters">
         <input
@@ -60,7 +61,9 @@ export default function HomePage({ events }) {
       </section>
 
       <section className="events-grid-wrap">
-        {filteredEvents.length === 0 ? (
+        {eventsLoading ? (
+          <p className="no-results">Loading events…</p>
+        ) : eventsError ? null : filteredEvents.length === 0 ? (
           <p className="no-results">No events match your filters.</p>
         ) : (
           <div className="events-grid">
@@ -72,7 +75,7 @@ export default function HomePage({ events }) {
               >
                 <div className="card-top">
                   <span className="ev-cat">{ev.category}</span>
-                  <span className="ev-date">{formatDate(ev.date)}</span>
+                  <span className="ev-date">{formatEventDate(ev.date)}</span>
                 </div>
                 <h3 className="ev-title">{ev.title}</h3>
                 <p className="ev-location">{ev.location}</p>

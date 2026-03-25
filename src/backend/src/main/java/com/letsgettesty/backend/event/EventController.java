@@ -14,8 +14,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.letsgettesty.backend.model.Event;
-
 @RestController
 @RequestMapping("/api/events")
 @CrossOrigin(origins = "http://localhost:5173")
@@ -28,28 +26,27 @@ public class EventController {
     }
 
     @GetMapping
-    public List<Event> listEvents() {
-        return eventService.listEvents();
+    public List<EventResponse> listEvents() {
+        return eventService.listEvents().stream().map(EventResponse::from).toList();
     }
 
     @GetMapping("/{id}")
-    public Event getEvent(@PathVariable int id) {
-        return eventService.getEvent(id);
+    public EventResponse getEvent(@PathVariable int id) {
+        return EventResponse.from(eventService.getEvent(id));
     }
 
     @PostMapping
-    public ResponseEntity<Event> createEvent(@RequestBody EventRequest request) {
-        Event created = eventService.createEvent(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    public ResponseEntity<EventResponse> createEvent(@RequestBody EventRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(EventResponse.from(eventService.createEvent(request)));
     }
 
     @PutMapping("/{id}")
-    public Event replaceEvent(@PathVariable int id, @RequestBody EventRequest request) {
-        return eventService.replaceEvent(id, request);
+    public EventResponse replaceEvent(@PathVariable int id, @RequestBody UpdateEventRequest request) {
+        return EventResponse.from(eventService.replaceEvent(id, request));
     }
 
     @PatchMapping("/{id}/cancel")
-    public Event cancelEvent(@PathVariable int id) {
-        return eventService.cancelEvent(id);
+    public EventResponse cancelEvent(@PathVariable int id) {
+        return EventResponse.from(eventService.cancelEvent(id));
     }
 }

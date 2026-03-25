@@ -36,8 +36,12 @@ public class EventService {
         return eventRepository.insert(event);
     }
 
-    public Event replaceEvent(int id, EventRequest request) {
+    public Event replaceEvent(int id, UpdateEventRequest update) {
         Event existing = getEvent(id);
+        if (existing.isCancelled()) {
+            throw badRequest("Cancelled events cannot be updated.");
+        }
+        EventRequest request = update.toEventRequest();
         validateWrite(request, existing);
         Event updated = new Event();
         updated.setId(id);
@@ -69,6 +73,7 @@ public class EventService {
         target.setStartsAt(request.startsAt());
         target.setEndsAt(request.endsAt());
         target.setCapacity(request.capacity());
+        target.setPrice(request.price());
     }
 
     private void validateWrite(EventRequest request, Event existing) {
@@ -89,6 +94,12 @@ public class EventService {
         }
         if (request.capacity() < 0) {
             throw badRequest("Capacity cannot be negative.");
+        }
+        if (request.price() == null) {
+            throw badRequest("Price is required.");
+        }
+        if (request.price() < 0) {
+            throw badRequest("Price cannot be negative.");
         }
         if (existing != null && request.capacity() < existing.getReservedCount()) {
             throw badRequest("Capacity cannot be less than the number of reserved seats.");

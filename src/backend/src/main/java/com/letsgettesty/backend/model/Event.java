@@ -2,6 +2,8 @@ package com.letsgettesty.backend.model;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class Event {
 
     private int id;
@@ -113,10 +115,12 @@ public class Event {
         this.reservedCount = reservedCount;
     }
 
+    @JsonProperty("isCancelled")
     public boolean isCancelled() {
         return isCancelled;
     }
 
+    @JsonProperty("isCancelled")
     public void setCancelled(boolean cancelled) {
         isCancelled = cancelled;
     }

@@ -1,74 +1,71 @@
-export const INITIAL_EVENTS = [
-  {
-    id: 1,
-    category: 'Movies',
-    title: 'Dune: Messiah - World Premiere',
-    date: '2026-04-15',
-    location: 'Cinema Imperial, Montreal',
-    capacity: 280,
-    price: 22,
-  },
-  {
-    id: 2,
-    category: 'Concerts',
-    title: 'Montreal Jazz Night',
-    date: '2026-04-18',
-    location: 'Place des Arts, Montreal',
-    capacity: 118,
-    price: 45,
-  },
-  {
-    id: 3,
-    category: 'Sports',
-    title: 'Canadiens vs Maple Leafs',
-    date: '2026-04-22',
-    location: 'Bell Centre, Montreal',
-    capacity: 312,
-    price: 89,
-  },
-  {
-    id: 4,
-    category: 'Travel',
-    title: 'Paris Weekend Getaway',
-    date: '2026-04-25',
-    location: 'Departure: Montreal-Trudeau',
-    capacity: 60,
-    price: 699,
-  },
-  {
-    id: 5,
-    category: 'Concerts',
-    title: 'Arcade Fire - Live',
-    date: '2026-05-10',
-    location: 'Bell Centre, Montreal',
-    capacity: 54,
-    price: 120,
-  },
-  {
-    id: 6,
-    category: 'Movies',
-    title: 'Blade Runner 2099 Screening',
-    date: '2026-05-12',
-    location: 'Cineplex Forum, Montreal',
-    capacity: 150,
-    price: 18,
-  },
-  {
-    id: 7,
-    category: 'Travel',
-    title: 'NYC Long Weekend Package',
-    date: '2026-05-16',
-    location: 'Departure: Montreal-Trudeau',
-    capacity: 45,
-    price: 399,
-  },
-  {
-    id: 8,
-    category: 'Sports',
-    title: 'Grand Prix de Montreal',
-    date: '2026-06-07',
-    location: 'Circuit Gilles Villeneuve',
-    capacity: 890,
-    price: 200,
-  },
-]
+export const CATEGORY_OPTIONS = ['Movies', 'Concerts', 'Travel', 'Sports']
+
+export const CATEGORY_TO_API = {
+  Movies: 'MOVIE',
+  Concerts: 'CONCERT',
+  Sports: 'SPORT',
+  Travel: 'TRAVEL',
+}
+
+export const CATEGORY_LABEL = {
+  MOVIE: 'Movies',
+  CONCERT: 'Concerts',
+  SPORT: 'Sports',
+  TRAVEL: 'Travel',
+  THEATRE: 'Theatre',
+  ART: 'Art',
+  OTHERS: 'Others',
+}
+
+export function formatEventDate(iso) {
+  if (!iso) return ''
+  const s = String(iso).trim()
+  const cal = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s)
+  if (cal) {
+    const y = Number(cal[1])
+    const m = Number(cal[2])
+    const d = Number(cal[3])
+    return new Date(y, m - 1, d).toLocaleDateString('en-CA', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    })
+  }
+  return new Date(s).toLocaleDateString('en-CA', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
+export function mapEventFromApi(apiEvent) {
+  const startsAt = apiEvent.startsAt || ''
+  const date = startsAt.length >= 10 ? startsAt.slice(0, 10) : ''
+  const apiCategory = apiEvent.category || ''
+  return {
+    id: apiEvent.id,
+    title: apiEvent.title,
+    location: apiEvent.location,
+    capacity: apiEvent.capacity,
+    price: apiEvent.price ?? 0,
+    category: CATEGORY_LABEL[apiCategory] || apiCategory,
+    date,
+  }
+}
+
+export function buildCreateEventPayload(form) {
+  const category = CATEGORY_TO_API[form.category]
+  if (!category) {
+    throw new Error('Invalid category.')
+  }
+  return {
+    title: form.title.trim(),
+    description: null,
+    category,
+    location: form.location.trim(),
+    startsAt: `${form.date}T18:00:00`,
+    endsAt: null,
+    capacity: Number(form.capacity),
+    price: Number(form.price),
+  }
+}

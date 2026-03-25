@@ -72,9 +72,12 @@ CREATE TABLE IF NOT EXISTS events (
     starts_at TIMESTAMP NOT NULL,
     ends_at TIMESTAMP,
     capacity INTEGER NOT NULL CHECK (capacity >= 0),
+    price INTEGER NOT NULL DEFAULT 0 CHECK (price >= 0),
     reserved_count INTEGER NOT NULL CHECK (reserved_count >= 0 AND reserved_count <= capacity),
     is_cancelled BOOLEAN NOT NULL DEFAULT FALSE
 );
+
+ALTER TABLE events ADD COLUMN IF NOT EXISTS price INTEGER NOT NULL DEFAULT 0;
 
 CREATE TABLE IF NOT EXISTS reservations (
     id SERIAL PRIMARY KEY,
@@ -116,19 +119,112 @@ INSERT INTO events (
     starts_at,
     ends_at,
     capacity,
+    price,
     reserved_count,
     is_cancelled
 ) VALUES
     (
         1,
+        'Dune: Messiah - World Premiere',
+        NULL,
+        'MOVIE',
+        'Cinema Imperial, Montreal',
+        '2026-04-15 18:00:00',
+        '2026-04-15 22:00:00',
+        280,
+        22,
+        0,
+        FALSE
+    ),
+    (
+        2,
         'Montreal Jazz Night',
         'An evening concert featuring local and guest jazz performers.',
-        'Concert',
+        'CONCERT',
         'Place des Arts, Montreal',
         '2026-04-18 19:30:00',
         '2026-04-18 22:00:00',
-        120,
+        118,
+        45,
         2,
+        FALSE
+    ),
+    (
+        3,
+        'Canadiens vs Maple Leafs',
+        NULL,
+        'SPORT',
+        'Bell Centre, Montreal',
+        '2026-04-22 18:00:00',
+        '2026-04-22 21:00:00',
+        312,
+        89,
+        0,
+        FALSE
+    ),
+    (
+        4,
+        'Paris Weekend Getaway',
+        NULL,
+        'TRAVEL',
+        'Departure: Montreal-Trudeau',
+        '2026-04-25 18:00:00',
+        NULL,
+        60,
+        699,
+        0,
+        FALSE
+    ),
+    (
+        5,
+        'Arcade Fire - Live',
+        NULL,
+        'CONCERT',
+        'Bell Centre, Montreal',
+        '2026-05-10 18:00:00',
+        '2026-05-10 22:00:00',
+        54,
+        120,
+        0,
+        FALSE
+    ),
+    (
+        6,
+        'Blade Runner 2099 Screening',
+        NULL,
+        'MOVIE',
+        'Cineplex Forum, Montreal',
+        '2026-05-12 18:00:00',
+        '2026-05-12 21:00:00',
+        150,
+        18,
+        0,
+        FALSE
+    ),
+    (
+        7,
+        'NYC Long Weekend Package',
+        NULL,
+        'TRAVEL',
+        'Departure: Montreal-Trudeau',
+        '2026-05-16 18:00:00',
+        NULL,
+        45,
+        399,
+        0,
+        FALSE
+    ),
+    (
+        8,
+        'Grand Prix de Montreal',
+        NULL,
+        'SPORT',
+        'Circuit Gilles Villeneuve',
+        '2026-06-07 18:00:00',
+        '2026-06-07 21:00:00',
+        890,
+        200,
+        0,
         FALSE
     )
 ON CONFLICT (id) DO NOTHING;
@@ -141,8 +237,8 @@ INSERT INTO reservations (
     created_at,
     cancelled_at
 ) VALUES
-    (1, 1, 1, 'CONFIRMED', '2026-03-15 10:30:00', NULL),
-    (2, 2, 1, 'CONFIRMED', '2026-03-16 14:45:00', NULL)
+    (1, 1, 2, 'CONFIRMED', '2026-03-15 10:30:00', NULL),
+    (2, 2, 2, 'CONFIRMED', '2026-03-16 14:45:00', NULL)
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO notifications (

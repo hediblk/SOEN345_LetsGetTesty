@@ -23,7 +23,7 @@ class DatabaseIntegrationTest {
 		assertThat(users).isEqualTo(2L);
 
 		Long events = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM events", Long.class);
-		assertThat(events).isEqualTo(1L);
+		assertThat(events).isEqualTo(8L);
 
 		Long reservations = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM reservations", Long.class);
 		assertThat(reservations).isEqualTo(2L);

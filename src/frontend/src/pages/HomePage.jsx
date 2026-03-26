@@ -74,8 +74,12 @@ export default function HomePage({ events, eventsLoading, eventsError }) {
 
               >
                 <div className="card-top">
-                  <span className="ev-cat">{ev.category}</span>
-                  <span className="ev-date">{formatEventDate(ev.date)}</span>
+                  <div className="card-top-left">
+                    <span className="ev-cat">{ev.category}</span>
+                  </div>
+                  <div className="card-top-right">
+                    <span className="ev-date">{formatEventDate(ev.date)}</span>
+                  </div>
                 </div>
                 <h3 className="ev-title">{ev.title}</h3>
                 <p className="ev-location">{ev.location}</p>
@@ -84,7 +88,11 @@ export default function HomePage({ events, eventsLoading, eventsError }) {
                     <span className="ev-spots">{ev.capacity} spots</span>
                     <span className="ev-price">{ev.price === 0 ? 'Free' : `$${ev.price}`}</span>
                   </div>
-                  <button className="btn-reserve">Reserve</button>
+                  {ev.isCancelled ? (
+                    <span className="cancelled-badge-footer">Cancelled</span>
+                  ) : (
+                    <button className="btn-reserve">Reserve</button>
+                  )}
                 </div>
               </article>
             ))}

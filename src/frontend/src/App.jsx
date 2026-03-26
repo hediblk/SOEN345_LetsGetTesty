@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Header from './components/Header'
 import HomePage from './pages/HomePage'
 import AddEventsPage from './pages/AddEventsPage'
+import EditEventsPage from './pages/EditEventsPage'
 import AuthPage from './pages/AuthPage'
 import ReservationsPage from './pages/ReservationsPage'
 import { fetchEvents } from './api/eventsApi'
@@ -56,6 +57,15 @@ export default function App() {
               path="/add-events"
               element={
                 <AddEventsPage
+                  events={events}
+                  onEventsChanged={() => loadEvents({ silent: true })}
+                />
+              }
+            />
+            <Route
+              path="/edit-events"
+              element={
+                <EditEventsPage
                   events={events}
                   onEventsChanged={() => loadEvents({ silent: true })}
                 />

@@ -45,11 +45,13 @@ export function mapEventFromApi(apiEvent) {
   return {
     id: apiEvent.id,
     title: apiEvent.title,
+    description: apiEvent.description ?? '',
     location: apiEvent.location,
     capacity: apiEvent.capacity,
     price: apiEvent.price ?? 0,
     category: CATEGORY_LABEL[apiCategory] || apiCategory,
     date,
+    isCancelled: apiEvent.isCancelled === true,
   }
 }
 
@@ -67,5 +69,20 @@ export function buildCreateEventPayload(form) {
     endsAt: null,
     capacity: Number(form.capacity),
     price: Number(form.price),
+  }
+}
+
+export function buildUpdateEventPayload(form) {
+  return buildCreateEventPayload(form)
+}
+
+export function buildEventFormFromEvent(eventItem) {
+  return {
+    title: eventItem?.title || '',
+    date: eventItem?.date || '',
+    category: eventItem?.category || 'Movies',
+    location: eventItem?.location || '',
+    price: String(eventItem?.price ?? 0),
+    capacity: String(eventItem?.capacity ?? 50),
   }
 }

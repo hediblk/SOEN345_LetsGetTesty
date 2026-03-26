@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './ReservationsPage.css'
+import { cancelReservation } from '../api/reservationsApi'
 
 const MOCK_RESERVATIONS = [
   { id: 1, event: 'Dune: Messiah — World Premiere', date: '2026-04-15', venue: 'Cinema Imperial, Montreal',   status: 'CONFIRMED', booked: '2026-03-10' },
@@ -11,29 +12,51 @@ function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-export default function ReservationsPage() {
-  const [reservations, setReservations] = useState(MOCK_RESERVATIONS)
+export default function ReservationsPage({ events, reservations, reservationsLoading, reservationsError }) {
+  const [localReservations, setLocalReservations] = useState([])
   const [cancelling, setCancelling] = useState(null)
 
   const handleCancel = (id) => {
-    setReservations(rs =>
+    cancelReservation(id);
+    setLocalReservations(rs =>
       rs.map(r => r.id === id ? { ...r, status: 'CANCELLED' } : r)
     )
     setCancelling(null)
   }
 
+  useEffect(() => {
+    if (!reservations || !events) return
+
+    const eventMap = new Map(events.map(e => [e.id, e]))
+
+    const mapped = reservations.map(r => {
+      const event = eventMap.get(r.eventId)
+      return {
+        id: r.id,
+        event: event?.title ?? 'Unknown Event',
+        date: event?.date ?? '',
+        venue: event?.location ?? '',
+        status: r.status,
+        booked: r.createdAt,
+      }
+    })
+
+    setLocalReservations(mapped)
+    console.log(mapped)
+  }, [events, reservations])
+
   return (
     <div className="res-page">
       <div className="res-header">
         <h1 className="res-title">My Tickets</h1>
-        <span className="res-count">{reservations.filter(r => r.status === 'CONFIRMED').length} active</span>
+        <span className="res-count">{localReservations.filter(r => r.status === 'CONFIRMED').length} active</span>
       </div>
 
-      {reservations.length === 0 ? (
+      {localReservations.length === 0 ? (
         <p className="res-empty">No reservations yet. <a href="/">Browse events →</a></p>
       ) : (
         <div className="res-list">
-          {reservations.map((r) => (
+          {localReservations.map((r) => (
             <div
               key={r.id}
               className={`res-item ${r.status === 'CANCELLED' ? 'cancelled' : ''}`}

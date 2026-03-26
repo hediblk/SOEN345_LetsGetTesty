@@ -8,15 +8,19 @@ public class Reservation {
     private ReservationStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime cancelledAt;
+    private int userId;
+    private int eventId;
 
     public Reservation() {
     }
 
-    public Reservation(int id, ReservationStatus status, LocalDateTime createdAt, LocalDateTime cancelledAt) {
+    public Reservation(int id, int userId, int eventId, ReservationStatus status, LocalDateTime createdAt, LocalDateTime cancelledAt) {
         this.id = id;
         this.status = status;
         this.createdAt = createdAt;
         this.cancelledAt = cancelledAt;
+        this.eventId = eventId;
+        this.userId = userId;
     }
 
     public int getId() {
@@ -49,5 +53,21 @@ public class Reservation {
 
     public void setCancelledAt(LocalDateTime cancelledAt) {
         this.cancelledAt = cancelledAt;
+    }
+
+    public int getEventId() {
+        return eventId;
+    }
+
+    public void setEventId(int eventId) {
+        this.eventId = eventId;
+    }
+
+    public int getUserId() {
+        return userId;
+    }
+
+    public void setUserId(int userId) {
+        this.userId = userId;
     }
 }

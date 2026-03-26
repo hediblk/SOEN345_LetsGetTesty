@@ -56,6 +56,10 @@
   transition: opacity 0.15s ease;
 }
 
+button.nav-cta {
+  border: none;
+}
+
 .nav-cta:hover { opacity: 0.88; }
 
 @media (max-width: 640px) {

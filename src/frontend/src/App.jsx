@@ -72,10 +72,16 @@ export default function App() {
     loadReservations(authUser.id, { silent: false })
   }, [authUser, loadReservations])
 
+  function handleLogout() {
+    setAuthUser(null);
+    setReservations([]);
+    localStorage.removeItem(AUTH_STORAGE_KEY)
+  }
+
   return (
     <BrowserRouter>
       <div className="app">
-        <Header />
+        <Header isSignedIn={!!authUser} onLogout={(handleLogout)} />
         <main className="main">
           <Routes>
             <Route

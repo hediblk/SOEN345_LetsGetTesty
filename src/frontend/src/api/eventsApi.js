@@ -31,3 +31,25 @@ export async function createEvent(payload) {
   }
   return res.json()
 }
+
+export async function updateEvent(id, payload) {
+  const res = await fetch(`${EVENTS_URL}/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) {
+    throw new Error(await readErrorMessage(res))
+  }
+  return res.json()
+}
+
+export async function cancelEvent(id) {
+  const res = await fetch(`${EVENTS_URL}/${id}/cancel`, {
+    method: 'PATCH',
+  })
+  if (!res.ok) {
+    throw new Error(await readErrorMessage(res))
+  }
+  return res.json()
+}

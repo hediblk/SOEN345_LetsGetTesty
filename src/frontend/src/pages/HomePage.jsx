@@ -1,13 +1,14 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { formatEventDate } from '../data/events'
 import './HomePage.css'
 
 const CATS = ['All', 'Movies', 'Concerts', 'Travel', 'Sports']
 
-export default function HomePage({ events, eventsLoading, eventsError }) {
+export default function HomePage({ events, eventsLoading, eventsError, reservations, onReserve }) {
   const [search, setSearch]   = useState('')
   const [cat, setCat]         = useState('All')
   const [dateFrom, setDateFrom] = useState('')
+  const booked = useMemo(() => new Set((reservations ?? []).filter(r => r.status === 'CONFIRMED').map(r => r.eventId)), [reservations])
 
   const filteredEvents = events.filter(ev => {
     const matchCat    = cat === 'All' || ev.category === cat
@@ -90,8 +91,10 @@ export default function HomePage({ events, eventsLoading, eventsError }) {
                   </div>
                   {ev.isCancelled ? (
                     <span className="cancelled-badge-footer">Cancelled</span>
+                  ) : booked.has(ev.id) ? (
+                    <span className="booked-badge-footer">Booked</span>
                   ) : (
-                    <button className="btn-reserve">Reserve</button>
+                    <button className="btn-reserve" onClick={() => onReserve(ev.id)}>Reserve</button>
                   )}
                 </div>
               </article>

@@ -7,9 +7,9 @@ import EditEventsPage from './pages/EditEventsPage'
 import AuthPage from './pages/AuthPage'
 import ReservationsPage from './pages/ReservationsPage'
 import { fetchEvents } from './api/eventsApi'
-import { fetchReservationsByUser } from './api/reservationsApi'
+import { createReservation, fetchReservationsByUser } from './api/reservationsApi'
 import { mapEventFromApi } from './data/events'
-import { mapReservationFromApi } from './data/reservations'
+import { buildCreateReservationPayload, mapReservationFromApi } from './data/reservations'
 import { AUTH_STORAGE_KEY } from './constants'
 import './App.css'
 
@@ -78,6 +78,13 @@ export default function App() {
     localStorage.removeItem(AUTH_STORAGE_KEY)
   }
 
+  async function handleReserve(eventId) {
+    if (!authUser) return
+    const userId = authUser.id
+    await createReservation(buildCreateReservationPayload(userId, eventId))
+    loadReservations(authUser.id, { silent: false })
+  }
+
   return (
     <BrowserRouter>
       <div className="app">
@@ -91,6 +98,8 @@ export default function App() {
                   events={events}
                   eventsLoading={eventsLoading}
                   eventsError={eventsError}
+                  reservations={reservations}
+                  onReserve={handleReserve}
                 />
               }
             />

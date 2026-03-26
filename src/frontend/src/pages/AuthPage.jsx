@@ -3,6 +3,25 @@ import { useNavigate } from 'react-router-dom'
 import { persistAuthSession } from '../auth/authStorage'
 import './AuthPage.css'
 
+function validateRegisterPassword(password) {
+  if (password.length < 6) {
+    return 'Password must be at least 6 characters long.'
+  }
+  if (!/[a-z]/.test(password)) {
+    return 'Password must include a lowercase letter.'
+  }
+  if (!/[A-Z]/.test(password)) {
+    return 'Password must include an uppercase letter.'
+  }
+  if (!/[0-9]/.test(password)) {
+    return 'Password must include a number.'
+  }
+  if (!/[^A-Za-z0-9]/.test(password)) {
+    return 'Password must include a special character.'
+  }
+  return ''
+}
+
 async function submitAuthRequest(path, payload) {
   let response
 
@@ -34,18 +53,30 @@ export default function AuthPage({ onAuthSuccess }) {
   const [contactType, setContactType] = useState('email')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [passwordError, setPasswordError] = useState('')
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
   const handleModeChange = (nextMode) => {
     setMode(nextMode)
     setError('')
+    setPasswordError('')
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setSubmitting(true)
     setError('')
+    setPasswordError('')
+
+    if (mode === 'register') {
+      const validationError = validateRegisterPassword(form.password)
+      if (validationError) {
+        setPasswordError(validationError)
+        return
+      }
+    }
+
+    setSubmitting(true)
 
     try {
       const payload = mode === 'login'
@@ -158,13 +189,15 @@ export default function AuthPage({ onAuthSuccess }) {
               type="password"
               placeholder="••••••••"
               value={form.password}
-              onChange={e => {
-                set('password', e.target.value)
-                setError('')
-              }}
-              disabled={submitting}
-              required
-            />
+                onChange={e => {
+                  set('password', e.target.value)
+                  setError('')
+                  setPasswordError('')
+                }}
+                disabled={submitting}
+                required
+              />
+              {mode === 'register' && passwordError ? <p className="field-error">{passwordError}</p> : null}
           </div>
 
           {error && <p className="auth-error">{error}</p>}

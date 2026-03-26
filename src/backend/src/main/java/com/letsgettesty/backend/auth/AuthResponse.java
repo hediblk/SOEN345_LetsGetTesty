@@ -7,9 +7,10 @@ public record AuthResponse(
         String email,
         String phone,
         String contact,
-        String contactType) {
+        String contactType,
+        String token) {
 
-    public static AuthResponse from(AccountRecord account) {
+    public static AuthResponse from(AccountRecord account, String token) {
         String contact = account.email() != null ? account.email() : account.phone();
         String contactType = account.email() != null ? "EMAIL" : "PHONE";
         return new AuthResponse(
@@ -19,6 +20,7 @@ public record AuthResponse(
                 account.email(),
                 account.phone(),
                 contact,
-                contactType);
+                contactType,
+                token);
     }
 }

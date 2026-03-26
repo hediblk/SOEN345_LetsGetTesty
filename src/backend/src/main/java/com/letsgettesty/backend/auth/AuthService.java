@@ -13,9 +13,11 @@ import org.springframework.web.server.ResponseStatusException;
 public class AuthService {
 
     private final AuthRepository authRepository;
+    private final JwtService jwtService;
 
-    public AuthService(AuthRepository authRepository) {
+    public AuthService(AuthRepository authRepository, JwtService jwtService) {
         this.authRepository = authRepository;
+        this.jwtService = jwtService;
     }
 
     public AuthResponse register(RegisterRequest request) {
@@ -46,7 +48,7 @@ public class AuthService {
                 request.password(),
                 resolvedContact.email(),
                 resolvedContact.phone());
-        return AuthResponse.from(account);
+        return AuthResponse.from(account, jwtService.generateToken(account));
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -69,7 +71,7 @@ public class AuthService {
             throw unauthorized("Invalid password.");
         }
 
-        return AuthResponse.from(account);
+        return AuthResponse.from(account, jwtService.generateToken(account));
     }
 
     private AccountRole resolveRole(String rawRole) {

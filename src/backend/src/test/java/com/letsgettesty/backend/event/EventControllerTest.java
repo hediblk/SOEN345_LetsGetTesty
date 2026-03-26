@@ -2,6 +2,7 @@ package com.letsgettesty.backend.event;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -17,28 +18,42 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.letsgettesty.backend.auth.AuthExceptionHandler;
+import com.letsgettesty.backend.auth.JwtAuthInterceptor;
+import com.letsgettesty.backend.auth.JwtService;
 import com.letsgettesty.backend.model.Event;
 import com.letsgettesty.backend.model.EventCategory;
 
 @WebMvcTest(EventController.class)
-@Import(AuthExceptionHandler.class)
+@Import({ AuthExceptionHandler.class, JwtAuthInterceptor.class })
 class EventControllerTest {
+
+    private static final String VALID_TOKEN = "valid-token";
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockBean
     private EventService eventService;
+
+    @MockBean
+    private JwtService jwtService;
+
+    @BeforeEach
+    void setUp() {
+        doNothing().when(jwtService).verifyToken(VALID_TOKEN);
+    }
 
     @Test
     void listEventsReturnsJsonArray() throws Exception {
@@ -58,11 +73,19 @@ class EventControllerTest {
                                         0,
                                         false)));
 
-        mockMvc.perform(get("/api/events"))
+        mockMvc.perform(get("/api/events")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + VALID_TOKEN))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].title").value("Dune"))
                 .andExpect(jsonPath("$[0].price").value(22));
+    }
+
+    @Test
+    void listEventsRequiresBearerToken() throws Exception {
+        mockMvc.perform(get("/api/events"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message", equalTo("Missing bearer token.")));
     }
 
     @Test
@@ -82,6 +105,7 @@ class EventControllerTest {
         when(eventService.createEvent(any(EventRequest.class))).thenReturn(created);
 
         mockMvc.perform(post("/api/events")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + VALID_TOKEN)
                         .contentType(APPLICATION_JSON)
                         .content(
                                 """
@@ -105,7 +129,8 @@ class EventControllerTest {
     void getEventReturnsHandledNotFound() throws Exception {
         when(eventService.getEvent(99)).thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found."));
 
-        mockMvc.perform(get("/api/events/99"))
+        mockMvc.perform(get("/api/events/99")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + VALID_TOKEN))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", equalTo("Event not found.")));
     }
@@ -126,7 +151,8 @@ class EventControllerTest {
                 false);
         when(eventService.getEvent(2)).thenReturn(event);
 
-        mockMvc.perform(get("/api/events/2"))
+        mockMvc.perform(get("/api/events/2")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + VALID_TOKEN))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title", equalTo("Jazz Night")))
                 .andExpect(jsonPath("$.reservedCount").value(2))
@@ -150,6 +176,7 @@ class EventControllerTest {
         when(eventService.replaceEvent(eq(1), any(UpdateEventRequest.class))).thenReturn(updated);
 
         mockMvc.perform(put("/api/events/1")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + VALID_TOKEN)
                         .contentType(APPLICATION_JSON)
                         .content(
                                 """
@@ -177,6 +204,7 @@ class EventControllerTest {
                 .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found."));
 
         mockMvc.perform(put("/api/events/42")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + VALID_TOKEN)
                         .contentType(APPLICATION_JSON)
                         .content(
                                 """
@@ -201,6 +229,7 @@ class EventControllerTest {
                 .thenThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cancelled events cannot be updated."));
 
         mockMvc.perform(put("/api/events/5")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + VALID_TOKEN)
                         .contentType(APPLICATION_JSON)
                         .content(
                                 """
@@ -236,6 +265,7 @@ class EventControllerTest {
         when(eventService.replaceEvent(eq(6), any(UpdateEventRequest.class))).thenReturn(updated);
 
         mockMvc.perform(put("/api/events/6")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + VALID_TOKEN)
                         .contentType(APPLICATION_JSON)
                         .content(
                                 """
@@ -272,7 +302,8 @@ class EventControllerTest {
                 true);
         when(eventService.cancelEvent(3)).thenReturn(cancelled);
 
-        mockMvc.perform(patch("/api/events/3/cancel"))
+        mockMvc.perform(patch("/api/events/3/cancel")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + VALID_TOKEN))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.isCancelled").value(true));
 
@@ -284,7 +315,8 @@ class EventControllerTest {
         when(eventService.cancelEvent(99))
                 .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found."));
 
-        mockMvc.perform(patch("/api/events/99/cancel"))
+        mockMvc.perform(patch("/api/events/99/cancel")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + VALID_TOKEN))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", equalTo("Event not found.")));
 
@@ -297,6 +329,7 @@ class EventControllerTest {
                 .thenThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Location is required."));
 
         mockMvc.perform(put("/api/events/4")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + VALID_TOKEN)
                         .contentType(APPLICATION_JSON)
                         .content(
                                 """
@@ -323,6 +356,7 @@ class EventControllerTest {
                 .thenThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Title is required."));
 
         mockMvc.perform(post("/api/events")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + VALID_TOKEN)
                         .contentType(APPLICATION_JSON)
                         .content(
                                 """

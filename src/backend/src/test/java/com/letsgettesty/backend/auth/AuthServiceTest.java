@@ -2,6 +2,7 @@ package com.letsgettesty.backend.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -15,12 +16,14 @@ import org.springframework.web.server.ResponseStatusException;
 class AuthServiceTest {
 
     private final AuthRepository authRepository = mock(AuthRepository.class);
-    private final AuthService authService = new AuthService(authRepository);
+    private final JwtService jwtService = mock(JwtService.class);
+    private final AuthService authService = new AuthService(authRepository, jwtService);
 
     @Test
     void registerDefaultsToUserAndUsesFrontendContactFields() {
         when(authRepository.existsByFullName("Jane Doe")).thenReturn(false);
         when(authRepository.existsByEmail("jane@example.com")).thenReturn(false);
+        when(jwtService.generateToken(any(AccountRecord.class))).thenReturn("jwt-token");
         when(authRepository.createAccount(
                 AccountRole.USER,
                 "Jane Doe",
@@ -42,6 +45,7 @@ class AuthServiceTest {
         assertThat(response.email()).isEqualTo("jane@example.com");
         assertThat(response.phone()).isNull();
         assertThat(response.contactType()).isEqualTo("EMAIL");
+        assertThat(response.token()).isEqualTo("jwt-token");
 
         verify(authRepository).createAccount(AccountRole.USER, "Jane Doe", "secret", "jane@example.com", null);
     }
@@ -89,6 +93,7 @@ class AuthServiceTest {
 
     @Test
     void loginAcceptsPhoneNumberForAdminAccounts() {
+        when(jwtService.generateToken(any(AccountRecord.class))).thenReturn("jwt-token");
         when(authRepository.findByLoginContact("514-555-0100")).thenReturn(List.of(
                 new AccountRecord(
                         3,
@@ -104,6 +109,7 @@ class AuthServiceTest {
         assertThat(response.role()).isEqualTo(AccountRole.ADMIN);
         assertThat(response.contact()).isEqualTo("514-555-0100");
         assertThat(response.contactType()).isEqualTo("PHONE");
+        assertThat(response.token()).isEqualTo("jwt-token");
     }
 
     @Test

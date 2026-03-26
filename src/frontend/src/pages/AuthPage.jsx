@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { persistAuthSession } from '../auth/authStorage'
 import './AuthPage.css'
-
-const AUTH_STORAGE_KEY = 'letsgettesty.auth'
 
 async function submitAuthRequest(path, payload) {
   let response
@@ -28,26 +27,19 @@ async function submitAuthRequest(path, payload) {
   return data
 }
 
-export default function AuthPage() {
+export default function AuthPage({ onAuthSuccess }) {
   const navigate = useNavigate()
   const [mode, setMode]         = useState('login')
   const [form, setForm]         = useState({ name: '', contact: '', password: '' })
   const [contactType, setContactType] = useState('email')
-  const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
-  const [authUser, setAuthUser] = useState(null)
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
   const handleModeChange = (nextMode) => {
     setMode(nextMode)
     setError('')
-  }
-
-  const handleContinue = () => {
-    setSubmitted(false)
-    navigate(mode === 'login' ? '/reservations' : '/')
   }
 
   const handleSubmit = async (e) => {
@@ -71,34 +63,14 @@ export default function AuthPage() {
 
       const data = await submitAuthRequest(`/api/auth/${mode === 'login' ? 'login' : 'register'}`, payload)
 
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(data))
-      setAuthUser(data)
-      setSubmitted(true)
+      persistAuthSession(data)
+      onAuthSuccess?.(data)
+      navigate('/', { replace: true })
     } catch (requestError) {
       setError(requestError.message)
     } finally {
       setSubmitting(false)
     }
-  }
-
-  if (submitted) {
-    const displayName = authUser?.fullName || 'your account'
-    const successMessage = mode === 'login'
-      ? `Signed in as ${displayName}.`
-      : `Account created for ${displayName}.`
-
-    return (
-      <div className="auth-page">
-        <div className="auth-card">
-          <div className="auth-success">
-            <span className="success-icon">✓</span>
-            <h2>{mode === 'login' ? 'Welcome back.' : 'Account created.'}</h2>
-            <p>{successMessage}</p>
-            <button className="auth-btn" onClick={handleContinue}>Continue</button>
-          </div>
-        </div>
-      </div>
-    )
   }
 
   return (

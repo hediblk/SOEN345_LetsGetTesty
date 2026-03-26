@@ -29,6 +29,9 @@ class AuthControllerTest {
     @MockBean
     private AuthService authService;
 
+    @MockBean
+    private JwtService jwtService;
+
     @Test
     void registerAcceptsFrontendPayloadShape() throws Exception {
         when(authService.register(any(RegisterRequest.class))).thenReturn(
@@ -39,7 +42,8 @@ class AuthControllerTest {
                         "jane@example.com",
                         null,
                         "jane@example.com",
-                        "EMAIL"));
+                        "EMAIL",
+                        "jwt-token"));
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(APPLICATION_JSON)
@@ -55,7 +59,8 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.role", equalTo("USER")))
                 .andExpect(jsonPath("$.fullName", equalTo("Jane Doe")))
                 .andExpect(jsonPath("$.contact", equalTo("jane@example.com")))
-                .andExpect(jsonPath("$.contactType", equalTo("EMAIL")));
+                .andExpect(jsonPath("$.contactType", equalTo("EMAIL")))
+                .andExpect(jsonPath("$.token", equalTo("jwt-token")));
 
         verify(authService).register(argThat(request ->
                 "Jane Doe".equals(request.fullName())

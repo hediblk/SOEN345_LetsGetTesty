@@ -74,7 +74,8 @@ public class JdbcEventRepository implements EventRepository {
                 starts_at = ?,
                 ends_at = ?,
                 capacity = ?,
-                price = ?
+                price = ?,
+                reserved_count = ?
             WHERE id = ?
             """;
 
@@ -146,6 +147,7 @@ public class JdbcEventRepository implements EventRepository {
                 event.getEndsAt(),
                 event.getCapacity(),
                 event.getPrice(),
+                event.getReservedCount(),
                 event.getId());
         return updated > 0;
     }

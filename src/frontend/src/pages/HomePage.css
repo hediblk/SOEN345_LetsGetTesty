@@ -208,3 +208,16 @@
   font-size: 13px;
   font-weight: 500;
 }
+
+.booked-badge-footer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 1.1rem;
+  border-radius: var(--radius);
+  background: rgba(32, 130, 80, 0.13);
+  color: var(#208250);
+  border: 1px solid rgba(32, 130, 80, 0.25);
+  font-size: 13px;
+  font-weight: 500;
+}

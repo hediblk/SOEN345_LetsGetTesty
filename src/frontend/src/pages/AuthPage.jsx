@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './AuthPage.css'
-
-const AUTH_STORAGE_KEY = 'letsgettesty.auth'
+import { AUTH_STORAGE_KEY } from '../constants'
 
 async function submitAuthRequest(path, payload) {
   let response
@@ -28,7 +27,7 @@ async function submitAuthRequest(path, payload) {
   return data
 }
 
-export default function AuthPage() {
+export default function AuthPage({ display, onAuthUserChange }) {
   const navigate = useNavigate()
   const [mode, setMode]         = useState('login')
   const [form, setForm]         = useState({ name: '', contact: '', password: '' })
@@ -36,7 +35,6 @@ export default function AuthPage() {
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
-  const [authUser, setAuthUser] = useState(null)
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
@@ -72,7 +70,7 @@ export default function AuthPage() {
       const data = await submitAuthRequest(`/api/auth/${mode === 'login' ? 'login' : 'register'}`, payload)
 
       localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(data))
-      setAuthUser(data)
+      onAuthUserChange(data)
       setSubmitted(true)
     } catch (requestError) {
       setError(requestError.message)
@@ -82,7 +80,7 @@ export default function AuthPage() {
   }
 
   if (submitted) {
-    const displayName = authUser?.fullName || 'your account'
+    const displayName = display || 'your account'
     const successMessage = mode === 'login'
       ? `Signed in as ${displayName}.`
       : `Account created for ${displayName}.`

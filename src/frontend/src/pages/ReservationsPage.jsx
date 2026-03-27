@@ -16,12 +16,17 @@ export default function ReservationsPage({ events, reservations, reservationsLoa
   const [localReservations, setLocalReservations] = useState([])
   const [cancelling, setCancelling] = useState(null)
 
-  const handleCancel = (id) => {
-    cancelReservation(id);
-    setLocalReservations(rs =>
-      rs.map(r => r.id === id ? { ...r, status: 'CANCELLED' } : r)
-    )
-    setCancelling(null)
+  const handleCancel = async (id) => {
+    try {
+      await cancelReservation(id)
+      setLocalReservations(rs =>
+        rs.map(r => r.id === id ? { ...r, status: 'CANCELLED' } : r)
+      )
+    } catch (err) {
+      alert('Failed to cancel reservation. Please try again.')
+    } finally {
+      setCancelling(null)
+    }
   }
 
   useEffect(() => {

@@ -81,8 +81,12 @@ export default function App() {
   async function handleReserve(eventId) {
     if (!authUser) return
     const userId = authUser.id
-    await createReservation(buildCreateReservationPayload(userId, eventId))
-    loadReservations(authUser.id, { silent: false })
+    try {
+      await createReservation(buildCreateReservationPayload(userId, eventId))
+      loadReservations(authUser.id, { silent: false })
+    } catch (err) {
+      alert(err.message || 'Failed to reserve. The event may be full.')
+    }
   }
 
   return (

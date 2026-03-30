@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import './Header.css'
 
-export default function Header({ onLogout }) {
+export default function Header({ isSignedIn, onLogout }) {
   const { pathname } = useLocation()
 
   return (
@@ -14,7 +14,7 @@ export default function Header({ onLogout }) {
         <Link to="/add-events" className={pathname === '/add-events' ? 'nav-link active' : 'nav-link'}>Add Event</Link>
         <Link to="/edit-events" className={pathname === '/edit-events' ? 'nav-link active' : 'nav-link'}>Edit Event</Link>
         <Link to="/reservations" className={pathname === '/reservations' ? 'nav-link active' : 'nav-link'}>My Tickets</Link>
-        <button type="button" className="nav-cta nav-cta-button" onClick={onLogout}>Sign Out</button>
+        { isSignedIn ? <button className="nav-cta" onClick={onLogout}>Logout</button> : <Link to="/auth" className="nav-cta">Sign In</Link>}
       </nav>
     </header>
   )

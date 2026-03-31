@@ -85,4 +85,31 @@ class AuthControllerTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message", equalTo("Invalid password.")));
     }
+
+    @Test
+    void adminLoginUsesDedicatedEndpoint() throws Exception {
+        when(authService.loginAdmin(any(LoginRequest.class))).thenReturn(
+                new AuthResponse(
+                        1,
+                        AccountRole.ADMIN,
+                        "Admin One",
+                        "admin1@example.com",
+                        null,
+                        "admin1@example.com",
+                        "EMAIL",
+                        "jwt-token"));
+
+        mockMvc.perform(post("/api/auth/admin/login")
+                        .contentType(APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "contact": "admin1@example.com",
+                                  "password": "admin123"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.role", equalTo("ADMIN")))
+                .andExpect(jsonPath("$.fullName", equalTo("Admin One")))
+                .andExpect(jsonPath("$.token", equalTo("jwt-token")));
+    }
 }

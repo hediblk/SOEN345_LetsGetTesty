@@ -59,7 +59,7 @@ public class JwtService {
         return encodedHeader + "." + encodedPayload + "." + signature;
     }
 
-    public void verifyToken(String token) {
+    public AuthenticatedAccount authenticate(String token) {
         if (token == null || token.isBlank()) {
             throw unauthorized(ERROR_MSG);
         }
@@ -84,12 +84,20 @@ public class JwtService {
         }
 
         try {
-            Integer.parseInt(String.valueOf(payload.get("sub")));
-            AccountRole.valueOf(String.valueOf(payload.get("role")));
-            String.valueOf(payload.get("name"));
+            int accountId = Integer.parseInt(String.valueOf(payload.get("sub")));
+            AccountRole role = AccountRole.valueOf(String.valueOf(payload.get("role")));
+            String fullName = String.valueOf(payload.get("name"));
+            if (fullName.isBlank() || "null".equals(fullName)) {
+                throw unauthorized(ERROR_MSG);
+            }
+            return new AuthenticatedAccount(accountId, role, fullName);
         } catch (RuntimeException exception) {
             throw unauthorized(ERROR_MSG);
         }
+    }
+
+    public void verifyToken(String token) {
+        authenticate(token);
     }
 
     private String encodeJson(Map<String, Object> payload) {

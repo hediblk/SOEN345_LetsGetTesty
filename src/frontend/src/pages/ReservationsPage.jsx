@@ -17,7 +17,7 @@ export default function ReservationsPage({ events, reservations, reservationsLoa
       setLocalReservations(rs =>
         rs.map(r => r.id === id ? { ...r, status: 'CANCELLED' } : r)
       )
-    } catch (err) {
+    } catch {
       alert('Failed to cancel reservation. Please try again.')
     } finally {
       setCancelling(null)

@@ -30,6 +30,9 @@ public class AuthService {
         }
 
         AccountRole role = resolveRole(request.role());
+        if (role != AccountRole.USER) {
+            throw badRequest("Only customer accounts can be registered here.");
+        }
         ResolvedContact resolvedContact = resolveRegistrationContact(request);
 
         if (authRepository.existsByFullName(fullName)) {
@@ -43,7 +46,7 @@ public class AuthService {
         }
 
         AccountRecord account = authRepository.createAccount(
-                role,
+                AccountRole.USER,
                 fullName,
                 request.password(),
                 resolvedContact.email(),
@@ -52,12 +55,22 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
+        return loginForRole(request, AccountRole.USER);
+    }
+
+    public AuthResponse loginAdmin(LoginRequest request) {
+        return loginForRole(request, AccountRole.ADMIN);
+    }
+
+    private AuthResponse loginForRole(LoginRequest request, AccountRole role) {
         if (request.password() == null) {
             throw badRequest("Password is required.");
         }
 
         String loginContact = resolveLoginContact(request);
-        List<AccountRecord> matches = authRepository.findByLoginContact(loginContact);
+        List<AccountRecord> matches = role == AccountRole.ADMIN
+                ? authRepository.findAdminsByLoginContact(loginContact)
+                : authRepository.findUsersByLoginContact(loginContact);
 
         if (matches.isEmpty()) {
             throw unauthorized("No account found for the provided login.");

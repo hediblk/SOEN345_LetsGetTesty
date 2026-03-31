@@ -12,5 +12,7 @@ public interface AuthRepository {
 
     AccountRecord createAccount(AccountRole role, String fullName, String password, String email, String phone);
 
-    List<AccountRecord> findByLoginContact(String contact);
+    List<AccountRecord> findUsersByLoginContact(String contact);
+
+    List<AccountRecord> findAdminsByLoginContact(String contact);
 }

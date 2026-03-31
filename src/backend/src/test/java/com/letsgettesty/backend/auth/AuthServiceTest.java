@@ -70,6 +70,25 @@ class AuthServiceTest {
     }
 
     @Test
+    void registerRejectsAdminRegistration() {
+        ResponseStatusException exception = catchThrowableOfType(
+                () -> authService.register(
+                        new RegisterRequest(
+                                "ADMIN",
+                                "Jane Doe",
+                                "secret",
+                                null,
+                                null,
+                                "514-555-0100",
+                                "phone")),
+                ResponseStatusException.class);
+
+        assertThat(exception).isNotNull();
+        assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(exception.getReason()).isEqualTo("Only customer accounts can be registered here.");
+    }
+
+    @Test
     void registerRejectsDuplicatePhoneNumber() {
         when(authRepository.existsByFullName("Jane Doe")).thenReturn(false);
         when(authRepository.existsByPhone("514-555-0100")).thenReturn(true);
@@ -77,7 +96,7 @@ class AuthServiceTest {
         ResponseStatusException exception = catchThrowableOfType(
                 () -> authService.register(
                         new RegisterRequest(
-                                "ADMIN",
+                                null,
                                 "Jane Doe",
                                 "secret",
                                 null,
@@ -94,7 +113,7 @@ class AuthServiceTest {
     @Test
     void loginAcceptsPhoneNumberForAdminAccounts() {
         when(jwtService.generateToken(any(AccountRecord.class))).thenReturn("jwt-token");
-        when(authRepository.findByLoginContact("514-555-0100")).thenReturn(List.of(
+        when(authRepository.findAdminsByLoginContact("514-555-0100")).thenReturn(List.of(
                 new AccountRecord(
                         3,
                         AccountRole.ADMIN,
@@ -103,7 +122,7 @@ class AuthServiceTest {
                         null,
                         "514-555-0100")));
 
-        AuthResponse response = authService.login(
+        AuthResponse response = authService.loginAdmin(
                 new LoginRequest("514-555-0100", null, null, "admin123", "phone"));
 
         assertThat(response.role()).isEqualTo(AccountRole.ADMIN);
@@ -114,7 +133,7 @@ class AuthServiceTest {
 
     @Test
     void loginRejectsWrongPassword() {
-        when(authRepository.findByLoginContact("user1@example.com")).thenReturn(List.of(
+        when(authRepository.findUsersByLoginContact("user1@example.com")).thenReturn(List.of(
                 new AccountRecord(
                         1,
                         AccountRole.USER,

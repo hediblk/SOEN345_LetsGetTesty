@@ -58,6 +58,22 @@
 
 .auth-form { display: flex; flex-direction: column; gap: 1.25rem; }
 
+.auth-mode-label {
+  padding: 0.35rem 0.75rem;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border-radius: var(--radius);
+}
+
+.auth-intro {
+  margin: 0 0 1.25rem;
+  color: var(--text-sub);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
 .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
 
 .contact-toggle {

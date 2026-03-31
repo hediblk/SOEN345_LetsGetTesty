@@ -46,8 +46,13 @@ async function submitAuthRequest(path, payload) {
   return data
 }
 
-export default function AuthPage({ onAuthSuccess }) {
+function getPostLoginPath(role) {
+  return role === 'ADMIN' ? '/admin/add-events' : '/'
+}
+
+export default function AuthPage({ onAuthSuccess, authRole = 'USER', allowRegister = authRole === 'USER' }) {
   const navigate = useNavigate()
+  const isAdminAuth = authRole === 'ADMIN'
   const [mode, setMode]         = useState('login')
   const [form, setForm]         = useState({ name: '', contact: '', password: '' })
   const [contactType, setContactType] = useState('email')
@@ -68,7 +73,7 @@ export default function AuthPage({ onAuthSuccess }) {
     setError('')
     setPasswordError('')
 
-    if (mode === 'register') {
+    if (allowRegister && mode === 'register') {
       const validationError = validateRegisterPassword(form.password)
       if (validationError) {
         setPasswordError(validationError)
@@ -92,11 +97,15 @@ export default function AuthPage({ onAuthSuccess }) {
             password: form.password,
           }
 
-      const data = await submitAuthRequest(`/api/auth/${mode === 'login' ? 'login' : 'register'}`, payload)
+      const path = mode === 'login'
+        ? (isAdminAuth ? '/api/auth/admin/login' : '/api/auth/login')
+        : '/api/auth/register'
+
+      const data = await submitAuthRequest(path, payload)
 
       persistAuthSession(data)
       onAuthSuccess?.(data)
-      navigate('/', { replace: true })
+      navigate(getPostLoginPath(data.role || authRole), { replace: true })
     } catch (requestError) {
       setError(requestError.message)
     } finally {
@@ -109,24 +118,32 @@ export default function AuthPage({ onAuthSuccess }) {
       <div className="auth-card">
 
         <div className="auth-header">
-          <span className="auth-logo">LGT</span>
-          <div className="auth-tabs">
-            <button
-              type="button"
-              className={`auth-tab ${mode === 'login' ? 'active' : ''}`}
-              onClick={() => handleModeChange('login')}
-            >Sign In</button>
-            <button
-              type="button"
-              className={`auth-tab ${mode === 'register' ? 'active' : ''}`}
-              onClick={() => handleModeChange('register')}
-            >Register</button>
-          </div>
+          <span className="auth-logo">{isAdminAuth ? 'LGT Admin' : 'LGT'}</span>
+          {allowRegister ? (
+            <div className="auth-tabs">
+              <button
+                type="button"
+                className={`auth-tab ${mode === 'login' ? 'active' : ''}`}
+                onClick={() => handleModeChange('login')}
+              >Sign In</button>
+              <button
+                type="button"
+                className={`auth-tab ${mode === 'register' ? 'active' : ''}`}
+                onClick={() => handleModeChange('register')}
+              >Register</button>
+            </div>
+          ) : (
+            <span className="auth-mode-label">Administrator</span>
+          )}
         </div>
+
+        <p className="auth-intro">
+          {isAdminAuth ? 'Use your preconfigured admin account to manage events.' : 'Sign in as a customer or create a new account.'}
+        </p>
 
         <form className="auth-form" onSubmit={handleSubmit}>
 
-          {mode === 'register' && (
+          {allowRegister && mode === 'register' && (
             <div className="form-group">
               <label className="form-label">Full Name</label>
               <input
@@ -197,7 +214,7 @@ export default function AuthPage({ onAuthSuccess }) {
                 disabled={submitting}
                 required
               />
-              {mode === 'register' && passwordError ? <p className="field-error">{passwordError}</p> : null}
+              {allowRegister && mode === 'register' && passwordError ? <p className="field-error">{passwordError}</p> : null}
           </div>
 
           {error && <p className="auth-error">{error}</p>}
@@ -205,7 +222,7 @@ export default function AuthPage({ onAuthSuccess }) {
           <button type="submit" className="auth-btn" disabled={submitting}>
             {submitting
               ? (mode === 'login' ? 'Signing In…' : 'Creating Account…')
-              : (mode === 'login' ? 'Sign In' : 'Create Account')}
+              : (mode === 'login' ? (isAdminAuth ? 'Admin Sign In' : 'Sign In') : 'Create Account')}
           </button>
 
         </form>

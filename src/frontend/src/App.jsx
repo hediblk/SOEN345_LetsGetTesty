@@ -18,6 +18,10 @@ import HomePage from './pages/HomePage'
 import ReservationsPage from './pages/ReservationsPage'
 import './App.css'
 
+function getDefaultPathForRole(role) {
+  return role === 'ADMIN' ? '/admin/add-events' : '/'
+}
+
 export default function App() {
   const [authSession, setAuthSession] = useState(() => getStoredAuthSession())
 
@@ -30,6 +34,10 @@ export default function App() {
   const [reservationsError, setReservationsError] = useState(null)
   
   const isAuthenticated = authSession !== null
+  const role = authSession?.role ?? null
+  const isAdmin = role === 'ADMIN'
+  const isUser = role === 'USER'
+  const defaultAuthenticatedPath = getDefaultPathForRole(role)
 
   const loadEvents = useCallback(async (options = {}) => {
     if (!authSession) {
@@ -79,6 +87,10 @@ export default function App() {
       const raw = await fetchReservationsByUser(userId)
       setReservations(raw.map(mapReservationFromApi))
     } catch (err) {
+      if (isUnauthorizedError(err)) {
+        clearAuthSession()
+        return
+      }
       setReservationsError(err.message || 'Failed to load reservations.')
     } finally {
       if (!silent) {
@@ -113,7 +125,7 @@ export default function App() {
   }, [authSession, loadEvents])
 
   useEffect(() => {
-    if (!authSession?.id) {
+    if (!isUser || !authSession?.id) {
       setReservations([])
       setReservationsError(null)
       setReservationsLoading(false)
@@ -121,14 +133,14 @@ export default function App() {
     }
 
     loadReservations(authSession.id, { silent: false })
-  }, [authSession, loadReservations])
+  }, [authSession, isUser, loadReservations])
 
   function handleLogout() {
     clearAuthSession()
   }
 
   async function handleReserve(eventId) {
-    if (!authSession?.id) {
+    if (!isUser || !authSession?.id) {
       return
     }
 
@@ -143,13 +155,15 @@ export default function App() {
   return (
     <BrowserRouter>
       <div className="app">
-        <Header isSignedIn={isAuthenticated} onLogout={handleLogout} />
+        <Header authSession={authSession} onLogout={handleLogout} />
         <main className="main">
           <Routes>
             <Route
               path="/"
               element={
-                isAuthenticated ? (
+                !isAuthenticated ? (
+                  <Navigate to="/auth" replace />
+                ) : isUser ? (
                   <HomePage
                     events={events}
                     eventsLoading={eventsLoading}
@@ -158,44 +172,56 @@ export default function App() {
                     onReserve={handleReserve}
                   />
                 ) : (
-                  <Navigate to="/auth" replace />
+                  <Navigate to={defaultAuthenticatedPath} replace />
                 )
               }
             />
             <Route
-              path="/add-events"
+              path="/admin/add-events"
               element={
-                isAuthenticated ? (
+                !isAuthenticated ? (
+                  <Navigate to="/admin" replace />
+                ) : isAdmin ? (
                   <AddEventsPage
                     events={events}
                     onEventsChanged={() => loadEvents({ silent: true })}
                   />
                 ) : (
-                  <Navigate to="/auth" replace />
+                  <Navigate to="/" replace />
                 )
               }
             />
             <Route
-              path="/edit-events"
+              path="/admin/edit-events"
               element={
-                isAuthenticated ? (
+                !isAuthenticated ? (
+                  <Navigate to="/admin" replace />
+                ) : isAdmin ? (
                   <EditEventsPage
                     events={events}
                     onEventsChanged={() => loadEvents({ silent: true })}
                   />
                 ) : (
-                  <Navigate to="/auth" replace />
+                  <Navigate to="/" replace />
                 )
               }
             />
             <Route
               path="/auth"
-              element={isAuthenticated ? <Navigate to="/" replace /> : <AuthPage onAuthSuccess={setAuthSession} />}
+              element={
+                isAuthenticated ? (
+                  <Navigate to={defaultAuthenticatedPath} replace />
+                ) : (
+                  <AuthPage onAuthSuccess={setAuthSession} />
+                )
+              }
             />
             <Route
               path="/reservations"
               element={
-                isAuthenticated ? (
+                !isAuthenticated ? (
+                  <Navigate to="/auth" replace />
+                ) : isUser ? (
                   <ReservationsPage
                     events={events}
                     reservations={reservations}
@@ -203,11 +229,28 @@ export default function App() {
                     reservationsError={reservationsError}
                   />
                 ) : (
-                  <Navigate to="/auth" replace />
+                  <Navigate to={defaultAuthenticatedPath} replace />
                 )
               }
             />
-            <Route path="*" element={<Navigate to={isAuthenticated ? '/' : '/auth'} replace />} />
+            <Route
+              path="/admin"
+              element={
+                isAuthenticated ? (
+                  <Navigate to={defaultAuthenticatedPath} replace />
+                ) : (
+                  <AuthPage
+                    key="admin-auth"
+                    onAuthSuccess={setAuthSession}
+                    authRole="ADMIN"
+                    allowRegister={false}
+                  />
+                )
+              }
+            />
+            <Route path="/add-events" element={<Navigate to={isAdmin ? '/admin/add-events' : isAuthenticated ? '/' : '/admin'} replace />} />
+            <Route path="/edit-events" element={<Navigate to={isAdmin ? '/admin/edit-events' : isAuthenticated ? '/' : '/admin'} replace />} />
+            <Route path="*" element={<Navigate to={isAuthenticated ? defaultAuthenticatedPath : '/auth'} replace />} />
           </Routes>
         </main>
       </div>

@@ -29,7 +29,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.letsgettesty.backend.auth.AccountRole;
+import com.letsgettesty.backend.auth.AuthenticatedAccount;
 import com.letsgettesty.backend.auth.AuthExceptionHandler;
+import com.letsgettesty.backend.auth.AuthorizationService;
 import com.letsgettesty.backend.auth.JwtAuthInterceptor;
 import com.letsgettesty.backend.auth.JwtService;
 import com.letsgettesty.backend.model.Event;
@@ -40,6 +43,7 @@ import com.letsgettesty.backend.model.EventCategory;
 class EventControllerTest {
 
     private static final String VALID_TOKEN = "valid-token";
+    private static final String USER_TOKEN = "user-token";
 
     @Autowired
     private MockMvc mockMvc;
@@ -50,13 +54,19 @@ class EventControllerTest {
     @MockBean
     private JwtService jwtService;
 
+    @MockBean
+    private AuthorizationService authorizationService;
+
     @BeforeEach
     void setUp() {
-        doNothing().when(jwtService).verifyToken(VALID_TOKEN);
+        when(jwtService.authenticate(VALID_TOKEN)).thenReturn(new AuthenticatedAccount(1, AccountRole.ADMIN, "Admin One"));
+        when(jwtService.authenticate(USER_TOKEN)).thenReturn(new AuthenticatedAccount(2, AccountRole.USER, "user1"));
     }
 
     @Test
     void listEventsReturnsJsonArray() throws Exception {
+        when(authorizationService.requireAnyRole(any(), eq(AccountRole.USER), eq(AccountRole.ADMIN)))
+                .thenReturn(new AuthenticatedAccount(2, AccountRole.USER, "user1"));
         when(eventService.listEvents())
                 .thenReturn(
                         List.of(
@@ -90,6 +100,8 @@ class EventControllerTest {
 
     @Test
     void createEventReturns201() throws Exception {
+        when(authorizationService.requireRole(any(), eq(AccountRole.ADMIN)))
+                .thenReturn(new AuthenticatedAccount(1, AccountRole.ADMIN, "Admin One"));
         Event created = new Event(
                 9,
                 "New Show",
@@ -123,6 +135,31 @@ class EventControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(9))
                 .andExpect(jsonPath("$.price").value(12));
+    }
+
+    @Test
+    void createEventRejectsRegularUsers() throws Exception {
+        when(authorizationService.requireRole(any(), eq(AccountRole.ADMIN)))
+                .thenThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have permission to access this resource."));
+
+        mockMvc.perform(post("/api/events")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + USER_TOKEN)
+                        .contentType(APPLICATION_JSON)
+                        .content(
+                                """
+                                {
+                                  "title": "New Show",
+                                  "description": null,
+                                  "category": "CONCERT",
+                                  "location": "Hall",
+                                  "startsAt": "2026-07-01T18:00:00",
+                                  "endsAt": null,
+                                  "capacity": 40,
+                                  "price": 12
+                                }
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message", equalTo("You do not have permission to access this resource.")));
     }
 
     @Test

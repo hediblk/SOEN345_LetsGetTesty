@@ -124,6 +124,13 @@
   line-height: 1.4;
 }
 
+.field-error {
+  margin: 0;
+  color: #b54747;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .auth-btn {
   margin-top: 0.25rem;
   padding: 0.75rem;

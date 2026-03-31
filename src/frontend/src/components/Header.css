@@ -62,6 +62,12 @@ button.nav-cta {
 
 .nav-cta:hover { opacity: 0.88; }
 
+.nav-cta-button {
+  border: none;
+  cursor: pointer;
+  font: inherit;
+}
+
 @media (max-width: 640px) {
   .header {
     height: auto;

@@ -1,12 +1,7 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import './ReservationsPage.css'
 import { cancelReservation } from '../api/reservationsApi'
-
-const MOCK_RESERVATIONS = [
-  { id: 1, event: 'Dune: Messiah — World Premiere', date: '2026-04-15', venue: 'Cinema Imperial, Montreal',   status: 'CONFIRMED', booked: '2026-03-10' },
-  { id: 2, event: 'Montreal Jazz Night',             date: '2026-04-18', venue: 'Place des Arts, Montreal',   status: 'CONFIRMED', booked: '2026-03-15' },
-  { id: 3, event: 'Paris Weekend Getaway',           date: '2026-04-25', venue: 'Departure: Montreal-Trudeau',status: 'CANCELLED', booked: '2026-02-20' },
-]
 
 function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })
@@ -57,8 +52,12 @@ export default function ReservationsPage({ events, reservations, reservationsLoa
         <span className="res-count">{localReservations.filter(r => r.status === 'CONFIRMED').length} active</span>
       </div>
 
-      {localReservations.length === 0 ? (
-        <p className="res-empty">No reservations yet. <a href="/">Browse events →</a></p>
+      {reservationsError ? (
+        <p className="res-empty" role="alert">{reservationsError}</p>
+      ) : reservationsLoading ? (
+        <p className="res-empty">Loading reservations…</p>
+      ) : localReservations.length === 0 ? (
+        <p className="res-empty">No reservations yet. <Link to="/">Browse events →</Link></p>
       ) : (
         <div className="res-list">
           {localReservations.map((r) => (

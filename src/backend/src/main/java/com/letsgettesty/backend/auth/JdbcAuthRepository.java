@@ -36,11 +36,13 @@ public class JdbcAuthRepository implements AuthRepository {
             ) accounts
             """;
 
-    private static final String FIND_BY_CONTACT_SQL = """
+    private static final String FIND_USER_BY_CONTACT_SQL = """
             SELECT id, 'USER' AS role, full_name, password_hash AS password, email, phone
             FROM users
             WHERE (email IS NOT NULL AND LOWER(email) = LOWER(?)) OR phone = ?
-            UNION ALL
+            """;
+
+    private static final String FIND_ADMIN_BY_CONTACT_SQL = """
             SELECT id, 'ADMIN' AS role, full_name, password_hash AS password, email, phone
             FROM admins
             WHERE (email IS NOT NULL AND LOWER(email) = LOWER(?)) OR phone = ?
@@ -101,7 +103,12 @@ public class JdbcAuthRepository implements AuthRepository {
     }
 
     @Override
-    public List<AccountRecord> findByLoginContact(String contact) {
-        return jdbcTemplate.query(FIND_BY_CONTACT_SQL, accountRowMapper, contact, contact, contact, contact);
+    public List<AccountRecord> findUsersByLoginContact(String contact) {
+        return jdbcTemplate.query(FIND_USER_BY_CONTACT_SQL, accountRowMapper, contact, contact);
+    }
+
+    @Override
+    public List<AccountRecord> findAdminsByLoginContact(String contact) {
+        return jdbcTemplate.query(FIND_ADMIN_BY_CONTACT_SQL, accountRowMapper, contact, contact);
     }
 }

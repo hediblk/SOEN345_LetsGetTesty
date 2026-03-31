@@ -31,13 +31,14 @@ public class JwtAuthInterceptor implements HandlerInterceptor, WebMvcConfigurer 
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing bearer token.");
         }
 
-        jwtService.verifyToken(authorizationHeader.substring(7).trim());
+        AuthenticatedAccount authenticatedAccount = jwtService.authenticate(authorizationHeader.substring(7).trim());
+        request.setAttribute(AuthorizationService.AUTHENTICATED_ACCOUNT_ATTRIBUTE, authenticatedAccount);
         return true;
     }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(this)
-                .addPathPatterns("/api/events", "/api/events/**");
+                .addPathPatterns("/api/events", "/api/events/**", "/api/reservations", "/api/reservations/**");
     }
 }

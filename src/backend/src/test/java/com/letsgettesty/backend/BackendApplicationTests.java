@@ -6,7 +6,10 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 
 import com.letsgettesty.backend.auth.JdbcAuthRepository;
 import com.letsgettesty.backend.event.EventRepository;
+import com.letsgettesty.backend.model.Notifier;
+import com.letsgettesty.backend.notification.NotificationRepository;
 import com.letsgettesty.backend.reservation.ReservationRepository;
+import com.letsgettesty.backend.user.UserRepository;
 
 @SpringBootTest(
 		properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration")
@@ -20,6 +23,15 @@ class BackendApplicationTests {
 
 	@MockBean
 	private ReservationRepository reservationRepository;
+
+	@MockBean
+	private UserRepository userRepository;
+
+	@MockBean
+	private Notifier notifier;
+
+	@MockBean
+	private NotificationRepository notificationRepository;
 
 	@Test
 	void contextLoads() {

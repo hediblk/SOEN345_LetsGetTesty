@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -12,6 +14,8 @@ import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -19,11 +23,24 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.letsgettesty.backend.model.Event;
 import com.letsgettesty.backend.model.EventCategory;
+import com.letsgettesty.backend.model.Notifier;
+import com.letsgettesty.backend.model.Reservation;
+import com.letsgettesty.backend.model.ReservationStatus;
+import com.letsgettesty.backend.model.User;
+import com.letsgettesty.backend.reservation.ReservationRepository;
+import com.letsgettesty.backend.user.UserRepository;
 
 class EventServiceTest {
 
     private final EventRepository eventRepository = mock(EventRepository.class);
-    private final EventService eventService = new EventService(eventRepository);
+    private final ReservationRepository reservationRepository = mock(ReservationRepository.class);
+    private final UserRepository userRepository = mock(UserRepository.class);
+    private final Notifier notifier = mock(Notifier.class);
+    private final EventService eventService = new EventService(
+            eventRepository,
+            reservationRepository,
+            userRepository,
+            notifier);
 
     @Test
     void createEventRequiresPrice() {
@@ -302,7 +319,7 @@ class EventServiceTest {
 
     @Test
     void cancelEventReturnsNotFoundWhenMissing() {
-        when(eventRepository.findById(999)).thenReturn(java.util.Optional.empty());
+        when(eventRepository.findById(999)).thenReturn(Optional.empty());
 
         ResponseStatusException exception = catchThrowableOfType(() -> eventService.cancelEvent(999),
                 ResponseStatusException.class);
@@ -346,6 +363,55 @@ class EventServiceTest {
         assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(exception.getReason()).isEqualTo("Cancelled events cannot be updated.");
         verify(eventRepository, never()).update(any(Event.class));
+    }
+
+    @Test
+    void cancelEventSendsEmailsToConfirmedUsersWithEmail() {
+        Event existing = new Event(
+                9,
+                "Jazz Night",
+                null,
+                EventCategory.CONCERT,
+                "Place des Arts",
+                LocalDateTime.parse("2026-04-18T19:30:00"),
+                null,
+                100,
+                40,
+                2,
+                false);
+        Reservation confirmedWithEmail = new Reservation(21, 1, 9, ReservationStatus.CONFIRMED, LocalDateTime.now(), null);
+        Reservation confirmedWithoutEmail = new Reservation(22, 2, 9, ReservationStatus.CONFIRMED, LocalDateTime.now(), null);
+        Reservation cancelledReservation = new Reservation(23, 3, 9, ReservationStatus.CANCELLED, LocalDateTime.now(), LocalDateTime.now());
+        User userWithEmail = new User(1, "Casey", "secret", "casey@example.com", null);
+        User userWithoutEmail = new User(2, "Jordan", "secret", null, "514-222-2222");
+
+        when(eventRepository.findById(9))
+                .thenReturn(Optional.of(existing))
+                .thenReturn(Optional.of(new Event(
+                        9,
+                        "Jazz Night",
+                        null,
+                        EventCategory.CONCERT,
+                        "Place des Arts",
+                        LocalDateTime.parse("2026-04-18T19:30:00"),
+                        null,
+                        100,
+                        40,
+                        2,
+                        true)));
+        when(eventRepository.setCancelled(9, true)).thenReturn(true);
+        when(reservationRepository.findByEventId(9)).thenReturn(List.of(
+                confirmedWithEmail,
+                confirmedWithoutEmail,
+                cancelledReservation));
+        when(userRepository.findById(1)).thenReturn(Optional.of(userWithEmail));
+        when(userRepository.findById(2)).thenReturn(Optional.of(userWithoutEmail));
+
+        Event result = eventService.cancelEvent(9);
+
+        assertThat(result.isCancelled()).isTrue();
+        verify(notifier).sendEmail(eq(21), eq("casey@example.com"), contains("Event cancelled"), contains("Jazz Night"));
+        verify(userRepository, never()).findById(3);
     }
 
     @Test

@@ -1,12 +1,22 @@
 import { expect, type Page } from '@playwright/test'
 
+export type CustomerCredentials = { email: string; password: string }
+
 export const customerEmail = process.env.E2E_USER_EMAIL?.trim() || 'user1@example.com'
 export const customerPassword = process.env.E2E_USER_PASSWORD || 'user123'
 
-export async function loginAsCustomer(page: Page) {
+/** Matches `database/init.sql` user id 1 (CONFIRMED reservation on event 2, etc.). */
+export const seedCustomerCredentials: CustomerCredentials = {
+  email: 'user1@example.com',
+  password: 'user123',
+}
+
+export async function loginAsCustomer(page: Page, creds?: CustomerCredentials) {
+  const email = creds?.email ?? customerEmail
+  const password = creds?.password ?? customerPassword
   await page.goto('/auth')
-  await page.getByPlaceholder('you@example.com').fill(customerEmail)
-  await page.locator('input[type="password"]').fill(customerPassword)
+  await page.getByPlaceholder('you@example.com').fill(email)
+  await page.locator('input[type="password"]').fill(password)
   await page.locator('form.auth-form button.auth-btn').click()
   await expect(page).toHaveURL(/\/$/)
 }
@@ -17,8 +27,8 @@ export async function resetHomeEventFilters(page: Page) {
   await page.locator('.date-input').fill('')
 }
 
-export async function openCustomerHome(page: Page) {
-  await loginAsCustomer(page)
+export async function openCustomerHome(page: Page, creds?: CustomerCredentials) {
+  await loginAsCustomer(page, creds)
   await expect(page.getByText('Loading events…')).not.toBeVisible({ timeout: 30_000 })
   await resetHomeEventFilters(page)
 }

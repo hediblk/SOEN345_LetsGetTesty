@@ -53,7 +53,7 @@ class EventApiIntegrationTest {
     void listEventsAsUserReturnsSeededEvents() throws Exception {
         mockMvc.perform(get("/api/events").header(HttpHeaders.AUTHORIZATION, userBearer()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(8))))
+                .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(6))))
                 .andExpect(jsonPath("$[*].title", hasItem(containsString("Dune"))));
     }
 
@@ -241,29 +241,29 @@ class EventApiIntegrationTest {
 
     @Test
     void replaceEventAsAdminUpdatesRow() throws Exception {
-        // Event 7: no reservations in seed; safe to replace without breaking FK tests.
+        // Event 6: no reservations in seed; safe to replace without breaking FK tests.
         UpdateEventRequest update = new UpdateEventRequest(
-                "NYC Package (updated via API)",
+                "Blade Runner (updated via API)",
                 null,
-                EventCategory.TRAVEL,
-                "Departure: Montreal-Trudeau",
-                LocalDateTime.parse("2026-05-16T18:00"),
+                EventCategory.MOVIE,
+                "Cineplex Forum, Montreal",
+                LocalDateTime.parse("2026-05-12T18:00"),
                 null,
-                LocalDateTime.parse("2026-05-16T22:00"),
-                50,
-                399);
+                LocalDateTime.parse("2026-05-12T21:00"),
+                160,
+                18);
 
-        mockMvc.perform(put("/api/events/7")
+        mockMvc.perform(put("/api/events/6")
                         .header(HttpHeaders.AUTHORIZATION, adminBearer())
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(update)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(7))
-                .andExpect(jsonPath("$.title").value("NYC Package (updated via API)"))
-                .andExpect(jsonPath("$.capacity").value(50));
+                .andExpect(jsonPath("$.id").value(6))
+                .andExpect(jsonPath("$.title").value("Blade Runner (updated via API)"))
+                .andExpect(jsonPath("$.capacity").value(160));
 
-        String title = jdbcTemplate.queryForObject("SELECT title FROM events WHERE id = 7", String.class);
-        assertThat(title).isEqualTo("NYC Package (updated via API)");
+        String title = jdbcTemplate.queryForObject("SELECT title FROM events WHERE id = 6", String.class);
+        assertThat(title).isEqualTo("Blade Runner (updated via API)");
     }
 
     @Test

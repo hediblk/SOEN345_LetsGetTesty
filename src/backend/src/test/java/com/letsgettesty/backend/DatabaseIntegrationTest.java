@@ -24,8 +24,8 @@ class DatabaseIntegrationTest {
 		assertThat(seedUsers).isEqualTo(2L);
 
 		Long seedEvents = jdbcTemplate.queryForObject(
-				"SELECT COUNT(*) FROM events WHERE id BETWEEN 1 AND 8", Long.class);
-		assertThat(seedEvents).isEqualTo(8L);
+				"SELECT COUNT(*) FROM events WHERE id IN (1, 2, 3, 5, 6, 8)", Long.class);
+		assertThat(seedEvents).isEqualTo(6L);
 
 		Long seedReservations = jdbcTemplate.queryForObject(
 				"SELECT COUNT(*) FROM reservations WHERE id IN (1, 2)", Long.class);

@@ -1,22 +1,6 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
-// AT-2 / US-2. E2E_USER_* from .env (see .env.example) or seed user user1@example.com / user123
-const customerEmail = process.env.E2E_USER_EMAIL?.trim() || 'user1@example.com'
-const customerPassword = process.env.E2E_USER_PASSWORD || 'user123'
-
-async function loginAsCustomer(page: Page) {
-  await page.goto('/auth')
-  await page.getByPlaceholder('you@example.com').fill(customerEmail)
-  await page.locator('input[type="password"]').fill(customerPassword)
-  await page.locator('form.auth-form button.auth-btn').click()
-  await expect(page).toHaveURL(/\/$/)
-}
-
-async function resetHomeEventFilters(page: Page) {
-  await page.locator('.cat-pills').getByRole('button', { name: 'All' }).click()
-  await page.locator('.search-input').fill('')
-  await page.locator('.date-input').fill('')
-}
+import { loginAsCustomer, resetHomeEventFilters } from './helpers'
 
 test.describe('AT-2: Events acceptance (US-2)', () => {
   test('Events tab is visible after customer sign-in', async ({ page }) => {

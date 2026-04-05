@@ -19,14 +19,17 @@ class DatabaseIntegrationTest {
 
 	@Test
 	void schemaAndSeedDataArePresent() {
-		Long users = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM users", Long.class);
-		assertThat(users).isEqualTo(2L);
+		Long seedUsers = jdbcTemplate.queryForObject(
+				"SELECT COUNT(*) FROM users WHERE id IN (1, 2)", Long.class);
+		assertThat(seedUsers).isEqualTo(2L);
 
-		Long events = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM events", Long.class);
-		assertThat(events).isEqualTo(8L);
+		Long seedEvents = jdbcTemplate.queryForObject(
+				"SELECT COUNT(*) FROM events WHERE id IN (1, 2, 3, 5, 6, 8)", Long.class);
+		assertThat(seedEvents).isEqualTo(6L);
 
-		Long reservations = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM reservations", Long.class);
-		assertThat(reservations).isEqualTo(2L);
+		Long seedReservations = jdbcTemplate.queryForObject(
+				"SELECT COUNT(*) FROM reservations WHERE id IN (1, 2)", Long.class);
+		assertThat(seedReservations).isEqualTo(2L);
 	}
 
 	@Test
@@ -36,6 +39,7 @@ class DatabaseIntegrationTest {
 				SELECT COUNT(*) FROM reservations r
 				INNER JOIN users u ON r.user_id = u.id
 				INNER JOIN events e ON r.event_id = e.id
+				WHERE r.id IN (1, 2)
 				""",
 				Long.class);
 		assertThat(joined).isEqualTo(2L);

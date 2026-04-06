@@ -5,8 +5,10 @@ import java.time.LocalDateTime;
 public class Notification {
 
     private int id;
+    private int reservationId;
     private NotificationChannel channel;
     private String destination;
+    private String subject;
     private String message;
     private LocalDateTime sentAt;
 
@@ -15,13 +17,17 @@ public class Notification {
 
     public Notification(
             int id,
+            int reservationId,
             NotificationChannel channel,
             String destination,
+            String subject,
             String message,
             LocalDateTime sentAt) {
         this.id = id;
+        this.reservationId = reservationId;
         this.channel = channel;
         this.destination = destination;
+        this.subject = subject;
         this.message = message;
         this.sentAt = sentAt;
     }
@@ -32,6 +38,14 @@ public class Notification {
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    public int getReservationId() {
+        return reservationId;
+    }
+
+    public void setReservationId(int reservationId) {
+        this.reservationId = reservationId;
     }
 
     public NotificationChannel getChannel() {
@@ -48,6 +62,14 @@ public class Notification {
 
     public void setDestination(String destination) {
         this.destination = destination;
+    }
+
+    public String getSubject() {
+        return subject;
+    }
+
+    public void setSubject(String subject) {
+        this.subject = subject;
     }
 
     public String getMessage() {

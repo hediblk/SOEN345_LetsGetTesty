@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -19,14 +21,23 @@ import org.springframework.web.server.ResponseStatusException;
 import com.letsgettesty.backend.event.EventRepository;
 import com.letsgettesty.backend.model.Event;
 import com.letsgettesty.backend.model.EventCategory;
+import com.letsgettesty.backend.model.Notifier;
 import com.letsgettesty.backend.model.Reservation;
 import com.letsgettesty.backend.model.ReservationStatus;
+import com.letsgettesty.backend.model.User;
+import com.letsgettesty.backend.user.UserRepository;
 
 class ReservationServiceTests {
 
     private final ReservationRepository reservationRepository = mock(ReservationRepository.class);
     private final EventRepository eventRepository = mock(EventRepository.class);
-    private final ReservationService reservationService = new ReservationService(reservationRepository, eventRepository);
+    private final UserRepository userRepository = mock(UserRepository.class);
+    private final Notifier notifier = mock(Notifier.class);
+    private final ReservationService reservationService = new ReservationService(
+            reservationRepository,
+            eventRepository,
+            userRepository,
+            notifier);
 
     // --- createReservation ---
 
@@ -36,16 +47,19 @@ class ReservationServiceTests {
                 LocalDateTime.parse("2026-06-01T18:00:00"), null, 100, 20, 5, false);
         Reservation created = new Reservation(1, 42, 1, ReservationStatus.CONFIRMED,
                 LocalDateTime.now(), null);
+        User user = new User(42, "Taylor", "secret", "taylor@example.com", null);
 
         when(eventRepository.findById(1)).thenReturn(Optional.of(event));
         when(reservationRepository.exists(42, 1)).thenReturn(false);
         when(reservationRepository.insert(any(Reservation.class))).thenReturn(created);
+        when(userRepository.findById(42)).thenReturn(Optional.of(user));
 
         Reservation result = reservationService.createReservation(42, 1);
 
         assertThat(result.getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
         verify(reservationRepository).insert(any(Reservation.class));
         verify(eventRepository).update(any(Event.class));
+        verify(notifier).sendEmail(eq(1), eq("taylor@example.com"), contains("Registration confirmed"), contains("Concert"));
     }
 
     @Test
@@ -54,15 +68,35 @@ class ReservationServiceTests {
                 LocalDateTime.parse("2026-06-01T18:00:00"), null, 100, 20, 5, false);
         Reservation created = new Reservation(1, 42, 1, ReservationStatus.CONFIRMED,
                 LocalDateTime.now(), null);
+        User user = new User(42, "Taylor", "secret", "taylor@example.com", null);
 
         when(eventRepository.findById(1)).thenReturn(Optional.of(event));
         when(reservationRepository.exists(42, 1)).thenReturn(false);
         when(reservationRepository.insert(any(Reservation.class))).thenReturn(created);
+        when(userRepository.findById(42)).thenReturn(Optional.of(user));
 
         reservationService.createReservation(42, 1);
 
         verify(eventRepository).update(org.mockito.ArgumentMatchers.argThat(
                 e -> e.getReservedCount() == 6));
+    }
+
+    @Test
+    void createReservationSkipsEmailWhenUserHasNoEmail() {
+        Event event = new Event(1, "Concert", null, EventCategory.CONCERT, "Venue",
+                LocalDateTime.parse("2026-06-01T18:00:00"), null, 100, 20, 5, false);
+        Reservation created = new Reservation(1, 42, 1, ReservationStatus.CONFIRMED,
+                LocalDateTime.now(), null);
+        User user = new User(42, "Taylor", "secret", null, "514-111-1111");
+
+        when(eventRepository.findById(1)).thenReturn(Optional.of(event));
+        when(reservationRepository.exists(42, 1)).thenReturn(false);
+        when(reservationRepository.insert(any(Reservation.class))).thenReturn(created);
+        when(userRepository.findById(42)).thenReturn(Optional.of(user));
+
+        reservationService.createReservation(42, 1);
+
+        verify(notifier, never()).sendEmail(anyInt(), any(), any(), any());
     }
 
     @Test
@@ -150,17 +184,20 @@ class ReservationServiceTests {
                 LocalDateTime.parse("2026-09-01T08:00:00"), null, 20, 0, 3, false);
         Reservation cancelled = new Reservation(11, 2, 5, ReservationStatus.CANCELLED,
                 LocalDateTime.now(), LocalDateTime.now());
+        User user = new User(2, "Sam", "secret", "sam@example.com", null);
 
         when(reservationRepository.findById(11))
                 .thenReturn(Optional.of(existing))
                 .thenReturn(Optional.of(cancelled));
         when(reservationRepository.setCancelled(11)).thenReturn(true);
         when(eventRepository.findById(5)).thenReturn(Optional.of(event));
+        when(userRepository.findById(2)).thenReturn(Optional.of(user));
 
         reservationService.cancelReservation(11);
 
         verify(eventRepository).update(org.mockito.ArgumentMatchers.argThat(
                 e -> e.getReservedCount() == 2));
+        verify(notifier).sendEmail(eq(11), eq("sam@example.com"), contains("Registration cancelled"), contains("Travel Trip"));
     }
 
     @Test
@@ -171,12 +208,14 @@ class ReservationServiceTests {
                 LocalDateTime.parse("2026-10-01T15:00:00"), null, 200, 5, 0, false);
         Reservation cancelled = new Reservation(12, 3, 6, ReservationStatus.CANCELLED,
                 LocalDateTime.now(), LocalDateTime.now());
+        User user = new User(3, "Morgan", "secret", "morgan@example.com", null);
 
         when(reservationRepository.findById(12))
                 .thenReturn(Optional.of(existing))
                 .thenReturn(Optional.of(cancelled));
         when(reservationRepository.setCancelled(12)).thenReturn(true);
         when(eventRepository.findById(6)).thenReturn(Optional.of(event));
+        when(userRepository.findById(3)).thenReturn(Optional.of(user));
 
         reservationService.cancelReservation(12);
 

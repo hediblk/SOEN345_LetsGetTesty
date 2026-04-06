@@ -1,5 +1,6 @@
 package com.letsgettesty.backend.event;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -7,14 +8,31 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.letsgettesty.backend.model.Event;
+import com.letsgettesty.backend.model.Notifier;
+import com.letsgettesty.backend.model.Reservation;
+import com.letsgettesty.backend.model.ReservationStatus;
+import com.letsgettesty.backend.user.UserRepository;
+import com.letsgettesty.backend.reservation.ReservationRepository;
 
 @Service
 public class EventService {
 
-    private final EventRepository eventRepository;
+    private static final DateTimeFormatter EVENT_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
-    public EventService(EventRepository eventRepository) {
+    private final EventRepository eventRepository;
+    private final ReservationRepository reservationRepository;
+    private final UserRepository userRepository;
+    private final Notifier notifier;
+
+    public EventService(
+            EventRepository eventRepository,
+            ReservationRepository reservationRepository,
+            UserRepository userRepository,
+            Notifier notifier) {
         this.eventRepository = eventRepository;
+        this.reservationRepository = reservationRepository;
+        this.userRepository = userRepository;
+        this.notifier = notifier;
     }
 
     public List<Event> listEvents() {
@@ -62,6 +80,7 @@ public class EventService {
         if (!eventRepository.setCancelled(id, true)) {
             throw notFound("Event not found.");
         }
+        notifyAttendeesThatEventWasCancelled(existing);
         return getEvent(id);
     }
 
@@ -123,5 +142,44 @@ public class EventService {
 
     private ResponseStatusException notFound(String message) {
         return new ResponseStatusException(HttpStatus.NOT_FOUND, message);
+    }
+
+    private void notifyAttendeesThatEventWasCancelled(Event event) {
+        for (Reservation reservation : reservationRepository.findByEventId(event.getId())) {
+            if (reservation.getStatus() != ReservationStatus.CONFIRMED) {
+                continue;
+            }
+
+            userRepository.findById(reservation.getUserId())
+                    .filter(user -> user.getEmail() != null && !user.getEmail().isBlank())
+                    .ifPresent(user -> notifier.sendEmail(
+                            reservation.getId(),
+                            user.getEmail(),
+                            "Event cancelled: " + event.getTitle(),
+                            """
+                                    Hi %s,
+
+                                    "%s" has been cancelled by the organizers.
+                                    Reservation ID: %d
+                                    Scheduled for: %s
+                                    Location: %s
+
+                                    We apologize for the inconvenience.
+                                    LetsGetTesty
+                                    """.formatted(
+                                    user.getFullName(),
+                                    event.getTitle(),
+                                    reservation.getId(),
+                                    formatEventWindow(event),
+                                    event.getLocation())));
+        }
+    }
+
+    private String formatEventWindow(Event event) {
+        String start = event.getStartsAt().format(EVENT_TIME_FORMATTER);
+        if (event.getEndsAt() == null) {
+            return start;
+        }
+        return start + " to " + event.getEndsAt().format(EVENT_TIME_FORMATTER);
     }
 }

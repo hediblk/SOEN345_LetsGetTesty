@@ -127,3 +127,159 @@ jobs:
             src/frontend/playwright-report/
             src/frontend/test-results/
           if-no-files-found: ignore
+
+  load-test-gate:
+    needs: [backend]
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: lets_get_testy
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d lets_get_testy"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: src/backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+      - name: Apply database schema and seed data
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -p 5432 -U postgres -d lets_get_testy \
+            -v ON_ERROR_STOP=1 -f database/init.sql
+      - name: Package backend (skip tests)
+        run: ./mvnw -B -DskipTests package
+      - name: Start backend
+        run: |
+          nohup java -jar target/backend-0.0.1-SNAPSHOT.jar > /tmp/backend-load.log 2>&1 &
+          echo "BACKEND_PID=$!" >> "$GITHUB_ENV"
+      - name: Wait for backend API
+        run: |
+          for i in $(seq 1 90); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/api/test || true)
+            if [ "$code" = "200" ]; then
+              echo "Backend is up"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "--- backend-load.log ---"
+          cat /tmp/backend-load.log || true
+          exit 1
+      - name: Run load-test CI gate (k6)
+        working-directory: src/backend/src/test/performance
+        run: |
+          docker run --rm \
+            --add-host=host.docker.internal:host-gateway \
+            -v "$GITHUB_WORKSPACE":/work \
+            -w /work/src/backend/src/test/performance \
+            grafana/k6 run \
+            -e BASE_URL=http://host.docker.internal:8080 \
+            -e VUS_BROWSE=80 \
+            -e VUS_RESERVATIONS=30 \
+            -e TEST_DURATION=2m \
+            loadtest.ts
+      - name: Upload load-test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: load-test-results
+          path: |
+            src/backend/src/test/performance/loadtest-summary.json
+            src/backend/src/test/performance/loadtest-summary.csv
+          if-no-files-found: warn
+
+  stress-test:
+    if: github.event_name == 'workflow_dispatch'
+    needs: [load-test-gate]
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: lets_get_testy
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d lets_get_testy"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: src/backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+      - name: Apply database schema and seed data
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -p 5432 -U postgres -d lets_get_testy \
+            -v ON_ERROR_STOP=1 -f database/init.sql
+      - name: Package backend (skip tests)
+        run: ./mvnw -B -DskipTests package
+      - name: Start backend
+        run: |
+          nohup java -jar target/backend-0.0.1-SNAPSHOT.jar > /tmp/backend-stress.log 2>&1 &
+          echo "BACKEND_PID=$!" >> "$GITHUB_ENV"
+      - name: Wait for backend API
+        run: |
+          for i in $(seq 1 90); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/api/test || true)
+            if [ "$code" = "200" ]; then
+              echo "Backend is up"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "--- backend-stress.log ---"
+          cat /tmp/backend-stress.log || true
+          exit 1
+      - name: Run stress test (k6)
+        working-directory: src/backend/src/test/performance
+        run: |
+          docker run --rm \
+            --add-host=host.docker.internal:host-gateway \
+            -v "$GITHUB_WORKSPACE":/work \
+            -w /work/src/backend/src/test/performance \
+            grafana/k6 run \
+            -e BASE_URL=http://host.docker.internal:8080 \
+            stresstest.ts
+      - name: Upload stress-test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stress-test-results
+          path: |
+            src/backend/src/test/performance/stresstest-summary.json
+            src/backend/src/test/performance/stresstest-summary.csv
+          if-no-files-found: warn

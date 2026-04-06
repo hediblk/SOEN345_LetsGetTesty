@@ -2,7 +2,6 @@ package com.letsgettesty.backend.event;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -158,6 +157,42 @@ class EventControllerTest {
                                   "price": 12
                                 }
                                 """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message", equalTo("You do not have permission to access this resource.")));
+    }
+
+    @Test
+    void replaceEventRejectsRegularUsers() throws Exception {
+        when(authorizationService.requireRole(any(), eq(AccountRole.ADMIN)))
+                .thenThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have permission to access this resource."));
+
+        mockMvc.perform(put("/api/events/1")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + USER_TOKEN)
+                        .contentType(APPLICATION_JSON)
+                        .content(
+                                """
+                                {
+                                  "title": "X",
+                                  "description": null,
+                                  "category": "MOVIE",
+                                  "location": "Here",
+                                  "startsAt": "2026-09-01T12:00:00",
+                                  "endsAt": null,
+                                  "capacity": 10,
+                                  "price": 0
+                                }
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message", equalTo("You do not have permission to access this resource.")));
+    }
+
+    @Test
+    void cancelEventRejectsRegularUsers() throws Exception {
+        when(authorizationService.requireRole(any(), eq(AccountRole.ADMIN)))
+                .thenThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have permission to access this resource."));
+
+        mockMvc.perform(patch("/api/events/1/cancel")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + USER_TOKEN))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message", equalTo("You do not have permission to access this resource.")));
     }

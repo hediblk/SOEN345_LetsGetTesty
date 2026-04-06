@@ -123,6 +123,26 @@ class EventServiceTest {
     }
 
     @Test
+    void createEventRejectsBlankLocation() {
+        ResponseStatusException exception = catchThrowableOfType(
+                () -> eventService.createEvent(
+                        new EventRequest(
+                                "Title",
+                                null,
+                                EventCategory.MOVIE,
+                                "   ",
+                                LocalDateTime.parse("2026-01-01T12:00:00"),
+                                null,
+                                10,
+                                0)),
+                ResponseStatusException.class);
+
+        assertThat(exception).isNotNull();
+        assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(exception.getReason()).isEqualTo("Location is required.");
+    }
+
+    @Test
     void createEventRequiresStartsAt() {
         ResponseStatusException exception = catchThrowableOfType(
                 () -> eventService.createEvent(
@@ -541,6 +561,193 @@ class EventServiceTest {
 
         assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(exception.getReason()).isEqualTo("Event not found.");
+    }
+
+    @Test
+    void listEventsReturnsOrderedFromRepository() {
+        Event first = new Event(
+                1,
+                "A",
+                null,
+                EventCategory.MOVIE,
+                "Here",
+                LocalDateTime.parse("2026-01-01T12:00:00"),
+                null,
+                10,
+                0,
+                0,
+                false);
+        Event second = new Event(
+                2,
+                "B",
+                null,
+                EventCategory.CONCERT,
+                "There",
+                LocalDateTime.parse("2026-02-01T12:00:00"),
+                null,
+                20,
+                5,
+                0,
+                false);
+        when(eventRepository.findAllOrderedByStartsAt()).thenReturn(List.of(first, second));
+
+        List<Event> result = eventService.listEvents();
+
+        assertThat(result).containsExactly(first, second);
+        verify(eventRepository).findAllOrderedByStartsAt();
+    }
+
+    @Test
+    void getEventReturnsWhenPresent() {
+        Event found = new Event(
+                3,
+                "Found",
+                "Desc",
+                EventCategory.SPORT,
+                "Stadium",
+                LocalDateTime.parse("2026-04-04T15:00:00"),
+                null,
+                500,
+                25,
+                10,
+                false);
+        when(eventRepository.findById(3)).thenReturn(java.util.Optional.of(found));
+
+        Event result = eventService.getEvent(3);
+
+        assertThat(result).isSameAs(found);
+    }
+
+    @Test
+    void cancelEventMarksCancelledAndReloads() {
+        Event before = new Event(
+                11,
+                "Live",
+                null,
+                EventCategory.THEATRE,
+                "Stage",
+                LocalDateTime.parse("2026-06-06T20:00:00"),
+                null,
+                100,
+                30,
+                12,
+                false);
+        Event after = new Event(
+                11,
+                "Live",
+                null,
+                EventCategory.THEATRE,
+                "Stage",
+                LocalDateTime.parse("2026-06-06T20:00:00"),
+                null,
+                100,
+                30,
+                12,
+                true);
+        when(eventRepository.findById(11)).thenReturn(java.util.Optional.of(before)).thenReturn(java.util.Optional.of(after));
+        when(eventRepository.setCancelled(11, true)).thenReturn(true);
+
+        Event result = eventService.cancelEvent(11);
+
+        assertThat(result.isCancelled()).isTrue();
+        assertThat(result.getReservedCount()).isEqualTo(12);
+        verify(eventRepository).setCancelled(11, true);
+    }
+
+    @Test
+    void cancelEventThrowsNotFoundWhenSetCancelledFails() {
+        Event active = new Event(
+                12,
+                "Show",
+                null,
+                EventCategory.MOVIE,
+                "Cinema",
+                LocalDateTime.parse("2026-07-07T18:00:00"),
+                null,
+                50,
+                10,
+                0,
+                false);
+        when(eventRepository.findById(12)).thenReturn(java.util.Optional.of(active));
+        when(eventRepository.setCancelled(12, true)).thenReturn(false);
+
+        ResponseStatusException exception =
+                catchThrowableOfType(() -> eventService.cancelEvent(12), ResponseStatusException.class);
+
+        assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(exception.getReason()).isEqualTo("Event not found.");
+    }
+
+    @Test
+    void replaceEventThrowsNotFoundWhenUpdateReturnsFalse() {
+        Event existing = new Event(
+                13,
+                "Same",
+                null,
+                EventCategory.MOVIE,
+                "Here",
+                LocalDateTime.parse("2026-08-01T12:00:00"),
+                null,
+                40,
+                5,
+                0,
+                false);
+        when(eventRepository.findById(13)).thenReturn(java.util.Optional.of(existing));
+        when(eventRepository.update(any(Event.class))).thenReturn(false);
+
+        ResponseStatusException exception = catchThrowableOfType(
+                () -> eventService.replaceEvent(
+                        13,
+                        new UpdateEventRequest(
+                                "Same",
+                                null,
+                                EventCategory.MOVIE,
+                                "Here",
+                                LocalDateTime.parse("2026-08-01T12:00:00"),
+                                null,
+                                null,
+                                40,
+                                5)),
+                ResponseStatusException.class);
+
+        assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(exception.getReason()).isEqualTo("Event not found.");
+    }
+
+    @Test
+    void replaceEventRequiresTitle() {
+        Event existing = new Event(
+                14,
+                "Old",
+                null,
+                EventCategory.CONCERT,
+                "Hall",
+                LocalDateTime.parse("2026-09-01T19:00:00"),
+                null,
+                60,
+                20,
+                0,
+                false);
+        when(eventRepository.findById(14)).thenReturn(java.util.Optional.of(existing));
+
+        ResponseStatusException exception = catchThrowableOfType(
+                () -> eventService.replaceEvent(
+                        14,
+                        new UpdateEventRequest(
+                                "  ",
+                                null,
+                                EventCategory.CONCERT,
+                                "Hall",
+                                LocalDateTime.parse("2026-09-01T19:00:00"),
+                                null,
+                                null,
+                                60,
+                                20)),
+                ResponseStatusException.class);
+
+        assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(exception.getReason()).isEqualTo("Title is required.");
+        verify(eventRepository, never()).update(any(Event.class));
     }
 
     @Test

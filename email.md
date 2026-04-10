@@ -1,7 +1,7 @@
 ## Setup
 
-- Onoly works with GMAIL for now
-- Dont add quotation marks in the .env file, just the email and the password directly
+- Only works with GMAIL for now
+- Don't add quotation marks in the .env file, just the email and the password directly
 
 
 

@@ -238,7 +238,8 @@ INSERT INTO reservations (
     cancelled_at
 ) VALUES
     (1, 1, 2, 'CONFIRMED', '2026-03-15 10:30:00', NULL),
-    (2, 2, 2, 'CONFIRMED', '2026-03-16 14:45:00', NULL)
+    (2, 2, 2, 'CONFIRMED', '2026-03-16 14:45:00', NULL),
+    (8, 1, 1, 'CANCELLED', '2026-03-16 14:45:00', '2026-03-16 14:45:00')
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO notifications (

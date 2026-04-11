@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test'
+import { type APIRequestContext, expect, type Page } from '@playwright/test'
 
 export type CustomerCredentials = { email: string; password: string }
 export type AdminCredentials = { email: string; password: string }
@@ -46,4 +46,9 @@ export async function openCustomerHome(page: Page, creds?: CustomerCredentials) 
   await loginAsCustomer(page, creds)
   await expect(page.getByText('Loading events…')).not.toBeVisible({ timeout: 30_000 })
   await resetHomeEventFilters(page)
+}
+
+export async function resetDb(request: APIRequestContext) {
+  const res = await request.post('/api/test/reset-db')
+  expect(res.ok()).toBeTruthy()
 }

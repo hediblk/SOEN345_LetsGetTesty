@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 
 import { openCustomerHome, seedCustomerCredentials, loginAsAdmin, seedAdminCredentials, resetHomeEventFilters } from './helpers'
 
-test.describe('AT-9: Cancel Events (AT-9)', () => {
+test.describe('AT-9: Cancel Events (US-9)', () => {
   test('A cancel event option is visible when editing an event', async ({ page }) => {
     await loginAsAdmin(page, seedAdminCredentials)
 

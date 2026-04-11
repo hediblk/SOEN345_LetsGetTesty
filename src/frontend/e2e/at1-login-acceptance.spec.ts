@@ -2,6 +2,10 @@ import { expect, test } from '@playwright/test'
 import { resetDb } from './helpers';
 
 test.describe('AT-1: Registration and Login (US-1)', () => {
+  test.beforeEach(async ({ request }) => {
+    await resetDb(request)
+  })
+
   test('Users are prompted to login when not logged in', async ({ page }) => {
     await page.goto('/auth')
 
@@ -55,7 +59,6 @@ test.describe('AT-1: Registration and Login (US-1)', () => {
   })
 
   test('Registeration flow', async ({ request, page }) => {
-    await resetDb(request)
     await page.goto('/auth')
     const form = page.locator('form.auth-form');
 

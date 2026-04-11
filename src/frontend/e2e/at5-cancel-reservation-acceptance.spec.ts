@@ -1,9 +1,13 @@
 import { expect, test } from '@playwright/test'
 
-import { openCustomerHome, seedCustomerCredentials } from './helpers'
+import { openCustomerHome, resetDb, seedCustomerCredentials } from './helpers'
 
 // Seed user (init.sql user 1) has a cancelled event
 test.describe('AT-5: Cancel Reservations (US-5)', () => {
+  test.beforeEach(async ({ request }) => {
+    await resetDb(request)
+  })
+
   test('A cancel option is visible for ongoing reservations', async ({ page }) => {
     await openCustomerHome(page, seedCustomerCredentials)
 
@@ -20,5 +24,17 @@ test.describe('AT-5: Cancel Reservations (US-5)', () => {
 
     const cancelledReservation = page.locator('.res-item.cancelled').first()
     await expect(cancelledReservation).toHaveCSS('opacity', '0.5')
+  })
+
+  test('Cancel flow', async ({ request, page }) => {
+    await openCustomerHome(page, seedCustomerCredentials)
+
+    await page.locator('.nav-link').filter({ hasText: 'My Tickets' }).click()
+    const jazz = page.locator('.res-item').filter({ hasText: 'Montreal Jazz Night' })
+
+    await jazz.getByRole('button', { name: 'Cancel' }).click()
+    await jazz.getByRole('button', { name: 'Yes, cancel' }).click()
+
+    await expect(jazz).toHaveCSS('opacity', '0.5')
   })
 })

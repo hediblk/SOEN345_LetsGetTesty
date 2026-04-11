@@ -225,7 +225,7 @@ INSERT INTO events (
         890,
         200,
         0,
-        FALSE
+        TRUE
     )
 ON CONFLICT (id) DO NOTHING;
 

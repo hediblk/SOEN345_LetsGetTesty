@@ -6,6 +6,9 @@ export type AdminCredentials = { email: string; password: string }
 export const customerEmail = process.env.E2E_USER_EMAIL?.trim() || 'user1@example.com'
 export const customerPassword = process.env.E2E_USER_PASSWORD || 'user123'
 
+export const adminEmail = 'admin1@example.com'
+export const adminPassword = 'admin123'
+
 /** Matches `database/init.sql` user id 1 (CONFIRMED reservation on event 2, etc.). */
 export const seedCustomerCredentials: CustomerCredentials = {
   email: 'user1@example.com',
@@ -28,8 +31,8 @@ export async function loginAsCustomer(page: Page, creds?: CustomerCredentials) {
 }
 
 export async function loginAsAdmin(page: Page, creds?: AdminCredentials) {
-  const email = creds?.email ?? customerEmail
-  const password = creds?.password ?? customerPassword
+  const email = creds?.email ?? adminEmail
+  const password = creds?.password ?? adminPassword
   await page.goto('/admin')
   await page.getByPlaceholder('you@example.com').fill(email)
   await page.locator('input[type="password"]').fill(password)

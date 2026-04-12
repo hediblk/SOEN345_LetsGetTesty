@@ -94,6 +94,7 @@ jobs:
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/lets_get_testy?user=postgres&password=postgres
           APP_AUTH_JWT_SECRET: test-jwt-secret
+          SPRING_PROFILES_ACTIVE: dev
         run: |
           nohup java -jar target/backend-0.0.1-SNAPSHOT.jar > /tmp/backend.log 2>&1 &
           echo "BACKEND_PID=$!" >> "$GITHUB_ENV"

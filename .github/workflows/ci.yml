@@ -183,12 +183,12 @@ jobs:
         run: |
           log=/tmp/backend-load.log
           for i in $(seq 1 120); do
-            code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 --max-time 15 http://127.0.0.1:8080/api/test || true)
-            if [ "$code" = "200" ]; then
-              echo "Backend is up (attempt $i)"
+            code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 --max-time 15 http://127.0.0.1:8080/api/events || true)
+            if [ "$code" = "401" ]; then
+              echo "Backend is up (GET /api/events returned 401 without token, attempt $i)"
               exit 0
             fi
-            echo "wait $i: HTTP ${code:-000} (expecting 200 for /api/test)"
+            echo "wait $i: HTTP ${code:-000} (expecting 401 for /api/events without token)"
             if [ "$((i % 15))" -eq 0 ]; then
               echo "--- tail $log ---"
               tail -n 40 "$log" || true
@@ -255,16 +255,22 @@ jobs:
           echo "BACKEND_PID=$!" >> "$GITHUB_ENV"
       - name: Wait for backend API
         run: |
-          for i in $(seq 1 90); do
-            code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/api/test || true)
-            if [ "$code" = "200" ]; then
-              echo "Backend is up"
+          log=/tmp/backend-stress.log
+          for i in $(seq 1 120); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 --max-time 15 http://127.0.0.1:8080/api/events || true)
+            if [ "$code" = "401" ]; then
+              echo "Backend is up (GET /api/events returned 401 without token, attempt $i)"
               exit 0
+            fi
+            echo "wait $i: HTTP ${code:-000} (expecting 401 for /api/events without token)"
+            if [ "$((i % 15))" -eq 0 ]; then
+              echo "--- tail $log ---"
+              tail -n 40 "$log" || true
             fi
             sleep 2
           done
-          echo "--- backend-stress.log ---"
-          cat /tmp/backend-stress.log || true
+          echo "--- full $log ---"
+          cat "$log" || true
           exit 1
       - name: Run stress test (k6)
         working-directory: src/backend/src/test/performance

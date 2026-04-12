@@ -201,7 +201,9 @@ jobs:
       - name: Run load-test CI gate (k6)
         working-directory: src/backend/src/test/performance
         run: |
+          rm -f loadtest-summary.json loadtest-summary.csv
           docker run --rm \
+            --user "$(id -u):$(id -g)" \
             --add-host=host.docker.internal:host-gateway \
             -v "$GITHUB_WORKSPACE":/work \
             -w /work/src/backend/src/test/performance \
@@ -275,7 +277,9 @@ jobs:
       - name: Run stress test (k6)
         working-directory: src/backend/src/test/performance
         run: |
+          rm -f stresstest-summary.json stresstest-summary.csv
           docker run --rm \
+            --user "$(id -u):$(id -g)" \
             --add-host=host.docker.internal:host-gateway \
             -v "$GITHUB_WORKSPACE":/work \
             -w /work/src/backend/src/test/performance \

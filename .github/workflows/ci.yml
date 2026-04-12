@@ -172,6 +172,9 @@ jobs:
       - name: Package backend (skip tests)
         run: ./mvnw -B -DskipTests package
       - name: Start backend
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/lets_get_testy?user=postgres&password=postgres
+          APP_AUTH_JWT_SECRET: test-jwt-secret
         run: |
           nohup java -jar target/backend-0.0.1-SNAPSHOT.jar > /tmp/backend-load.log 2>&1 &
           echo "BACKEND_PID=$!" >> "$GITHUB_ENV"
@@ -215,20 +218,6 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     needs: [load-test-gate]
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: lets_get_testy
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres -d lets_get_testy"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
     defaults:
       run:
         working-directory: src/backend
@@ -239,19 +228,21 @@ jobs:
           distribution: temurin
           java-version: "17"
           cache: maven
-      - name: Install PostgreSQL client
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y postgresql-client
-      - name: Apply database schema and seed data
+      - name: Require Supabase secrets for stress test
         env:
-          PGPASSWORD: postgres
+          STRESS_JDBC: ${{ secrets.STRESS_TEST_SPRING_DATASOURCE_URL }}
+          STRESS_JWT: ${{ secrets.STRESS_TEST_APP_AUTH_JWT_SECRET }}
         run: |
-          psql -h localhost -p 5432 -U postgres -d lets_get_testy \
-            -v ON_ERROR_STOP=1 -f database/init.sql
+          if [ -z "$STRESS_JDBC" ] || [ -z "$STRESS_JWT" ]; then
+            echo "::error::Add repo secrets STRESS_TEST_SPRING_DATASOURCE_URL (full JDBC URL) and STRESS_TEST_APP_AUTH_JWT_SECRET."
+            exit 1
+          fi
       - name: Package backend (skip tests)
         run: ./mvnw -B -DskipTests package
-      - name: Start backend
+      - name: Start backend (Supabase)
+        env:
+          SPRING_DATASOURCE_URL: ${{ secrets.STRESS_TEST_SPRING_DATASOURCE_URL }}
+          APP_AUTH_JWT_SECRET: ${{ secrets.STRESS_TEST_APP_AUTH_JWT_SECRET }}
         run: |
           nohup java -jar target/backend-0.0.1-SNAPSHOT.jar > /tmp/backend-stress.log 2>&1 &
           echo "BACKEND_PID=$!" >> "$GITHUB_ENV"

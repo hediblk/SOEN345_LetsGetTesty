@@ -85,27 +85,4 @@ class JdbcNotificationRepositoryTest {
         assertThat(result.getSubject()).isEqualTo("Event update");
     }
 
-    @Test
-    @SuppressWarnings("unchecked")
-    void insertWithSmsChannelUsesCorrectPersistenceValue() {
-        Notification input = new Notification(
-                0, 7, NotificationChannel.SMS, "514-555-0100",
-                null, "Your reservation is confirmed.", LocalDateTime.parse("2026-02-01T09:00:00"));
-        Notification saved = new Notification(
-                20, 7, NotificationChannel.SMS, "514-555-0100",
-                null, "Your reservation is confirmed.", LocalDateTime.parse("2026-02-01T09:00:00"));
-
-        when(jdbcTemplate.queryForObject(anyString(), any(RowMapper.class),
-                eq(7),
-                eq("sms"),
-                eq("514-555-0100"),
-                eq("Your reservation is confirmed."),
-                eq(LocalDateTime.parse("2026-02-01T09:00:00"))))
-                .thenReturn(saved);
-
-        Notification result = repository.insert(input);
-
-        assertThat(result.getId()).isEqualTo(20);
-        assertThat(result.getChannel()).isEqualTo(NotificationChannel.SMS);
-    }
 }

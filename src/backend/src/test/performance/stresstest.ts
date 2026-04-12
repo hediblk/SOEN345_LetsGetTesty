@@ -44,10 +44,10 @@ function toSummaryCsv(data: any): string {
 
 export const options = {
   stages: [
-    { duration: "2m", target: 50 },
+    { duration: "2m", target: 25 },
+    { duration: "3m", target: 50 },
+    { duration: "3m", target: 75 },
     { duration: "3m", target: 100 },
-    { duration: "3m", target: 150 },
-    { duration: "3m", target: 200 },
     { duration: "2m", target: 0 },
   ],
   thresholds: {

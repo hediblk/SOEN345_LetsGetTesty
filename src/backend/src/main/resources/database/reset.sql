@@ -1,4 +1,10 @@
-\set ON_ERROR_STOP on
+-- \set ON_ERROR_STOP on
+
+DROP TABLE IF EXISTS notifications;
+DROP TABLE IF EXISTS reservations;
+DROP TABLE IF EXISTS events;
+DROP TABLE IF EXISTS admins;
+DROP TABLE IF EXISTS users;
 
 --------------------------------------------------------
 -- TABLES
@@ -37,31 +43,13 @@ UPDATE admins
 SET phone = NULL
 WHERE email IS NOT NULL AND phone IS NOT NULL;
 
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1
-        FROM pg_constraint
-        WHERE conname = 'users_exactly_one_contact_chk'
-    ) THEN
-        ALTER TABLE users
-        ADD CONSTRAINT users_exactly_one_contact_chk
-        CHECK (num_nonnulls(email, phone) = 1);
-    END IF;
-END $$;
+-- ALTER TABLE users
+-- ADD CONSTRAINT users_exactly_one_contact_chk
+-- CHECK (num_nonnulls(email, phone) = 1);
 
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1
-        FROM pg_constraint
-        WHERE conname = 'admins_exactly_one_contact_chk'
-    ) THEN
-        ALTER TABLE admins
-        ADD CONSTRAINT admins_exactly_one_contact_chk
-        CHECK (num_nonnulls(email, phone) = 1);
-    END IF;
-END $$;
+-- ALTER TABLE admins
+-- ADD CONSTRAINT admins_exactly_one_contact_chk
+-- CHECK (num_nonnulls(email, phone) = 1);
 
 CREATE TABLE IF NOT EXISTS events (
     id SERIAL PRIMARY KEY,
@@ -239,7 +227,7 @@ INSERT INTO reservations (
 ) VALUES
     (1, 1, 2, 'CONFIRMED', '2026-03-15 10:30:00', NULL),
     (2, 2, 2, 'CONFIRMED', '2026-03-16 14:45:00', NULL),
-    (8, 1, 1, 'CANCELLED', '2026-03-16 14:45:00', '2026-03-16 14:45:00')
+    (3, 1, 1, 'CANCELLED', '2026-03-16 14:45:00', '2026-03-16 14:45:00')
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO notifications (

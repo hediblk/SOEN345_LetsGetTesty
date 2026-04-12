@@ -33,6 +33,9 @@ class BackendApplicationTests {
 	@MockBean
 	private NotificationRepository notificationRepository;
 
+	@MockBean
+	private TestController testController;
+
 	@Test
 	void contextLoads() {
 	}

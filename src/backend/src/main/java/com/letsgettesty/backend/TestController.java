@@ -14,7 +14,7 @@ import java.sql.Connection;
 
 @RestController
 @RequestMapping("/api/test")
-@Profile("dev")
+@Profile({"dev", "test"})
 public class TestController {
 	private final JdbcTemplate jdbcTemplate;
 

@@ -175,21 +175,28 @@ jobs:
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/lets_get_testy?user=postgres&password=postgres
           APP_AUTH_JWT_SECRET: test-jwt-secret
+          SPRING_PROFILES_ACTIVE: dev
         run: |
           nohup java -jar target/backend-0.0.1-SNAPSHOT.jar > /tmp/backend-load.log 2>&1 &
           echo "BACKEND_PID=$!" >> "$GITHUB_ENV"
       - name: Wait for backend API
         run: |
-          for i in $(seq 1 90); do
-            code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/api/test || true)
+          log=/tmp/backend-load.log
+          for i in $(seq 1 120); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 --max-time 15 http://127.0.0.1:8080/api/test || true)
             if [ "$code" = "200" ]; then
-              echo "Backend is up"
+              echo "Backend is up (attempt $i)"
               exit 0
+            fi
+            echo "wait $i: HTTP ${code:-000} (expecting 200 for /api/test)"
+            if [ "$((i % 15))" -eq 0 ]; then
+              echo "--- tail $log ---"
+              tail -n 40 "$log" || true
             fi
             sleep 2
           done
-          echo "--- backend-load.log ---"
-          cat /tmp/backend-load.log || true
+          echo "--- full $log ---"
+          cat "$log" || true
           exit 1
       - name: Run load-test CI gate (k6)
         working-directory: src/backend/src/test/performance
